@@ -15,6 +15,11 @@ export default defineConfig({
       },
     },
   },
+  // the build prerenders index.html through a preview server; in docker "localhost" can resolve to ::1
+  // while the prerender requests go to 127.0.0.1
+  preview: {
+    host: "127.0.0.1",
+  },
   optimizeDeps: {
     include: [
       "@serenity-kit/opaque",
