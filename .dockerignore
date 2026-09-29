@@ -1,0 +1,8 @@
+.git
+.env
+.react-router
+build
+node_modules
+anynote-server/target
+anynote-server/data
+anynote-server/.env
