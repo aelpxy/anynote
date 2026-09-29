@@ -29,6 +29,7 @@ import type { LinkRange } from "~/lib/editor-selection";
 import { createViewBridgePlugin } from "~/lib/editor-view-bridge-plugin";
 import { encryptedImageView } from "~/lib/encrypted-image-view";
 import { nullSafeImageSchema } from "~/lib/image-schema";
+import { imagePastePlugin } from "~/lib/image-paste-plugin";
 import { imageUploader, uploadPlaceholder } from "~/lib/image-uploader";
 import {
   headingAnchorPlugin,
@@ -91,6 +92,8 @@ export function NoteEditorContent({
           }));
           ctx.update(uploadConfig.key, (defaults) => ({
             ...defaults,
+            // copying an image in a browser also copies an <img> tag; the file is what should be kept
+            enableHtmlFileUploader: true,
             uploader: imageUploader,
             uploadWidgetFactory: uploadPlaceholder,
           }));
@@ -111,6 +114,8 @@ export function NoteEditorContent({
         .use(listener)
         // before clipboard so pasting a URL onto a selection links it instead of replacing it
         .use(autolinkPlugin)
+        // before upload so text copied from office apps isn't replaced by their picture of it
+        .use(imagePastePlugin)
         // before clipboard so pasted screenshots upload instead of being dropped
         .use(upload)
         .use(clipboard)
