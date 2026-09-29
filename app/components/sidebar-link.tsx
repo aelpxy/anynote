@@ -9,6 +9,7 @@ type SidebarLinkProps = {
   isSelected?: boolean;
   isHighlighted?: boolean;
   onClick?: React.MouseEventHandler<HTMLAnchorElement>;
+  onDoubleClick?: React.MouseEventHandler<HTMLAnchorElement>;
   onDragStart?: React.DragEventHandler<HTMLAnchorElement>;
   onDragEnd?: React.DragEventHandler<HTMLAnchorElement>;
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export function SidebarLink({
   isSelected,
   isHighlighted,
   onClick,
+  onDoubleClick,
   onDragStart,
   onDragEnd,
   children,
@@ -35,6 +37,7 @@ export function SidebarLink({
       state={state}
       aria-current={isActive ? "page" : undefined}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={[

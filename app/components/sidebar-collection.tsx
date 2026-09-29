@@ -129,6 +129,8 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
                 });
               }}
               onDragEnd={() => setSidebarDrag(null)}
+              // both clicks toggle, which cancels out, so the collection stays as it was
+              onDoubleClick={() => setIsRenaming(true)}
               className={[
                 "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors",
                 isOverInside

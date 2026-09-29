@@ -144,6 +144,10 @@ export function SidebarNoteLink({
               clearNoteSelection();
             }
           }}
+          onDoubleClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+            setIsRenaming(true);
+          }}
           onDragStart={(event) => {
             const notes = isMultiSelected ? selectedNotes : [note];
             if (isMultiSelected) {
