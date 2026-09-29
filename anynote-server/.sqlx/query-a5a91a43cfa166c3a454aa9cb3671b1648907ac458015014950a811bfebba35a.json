@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into collection_notes (workspace_id, collection_id, note_id, position)\n         values ($1, $2, $3,\n           (select coalesce(max(position) + 1, 0) from collection_notes where collection_id = $2))\n         on conflict (collection_id, note_id) do nothing",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a5a91a43cfa166c3a454aa9cb3671b1648907ac458015014950a811bfebba35a"
+}

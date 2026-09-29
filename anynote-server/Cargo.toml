@@ -1,0 +1,32 @@
+[package]
+name = "anynote-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8.9", features = ["macros"] }
+base64 = "0.23.1"
+chrono = { version = "0.4.45", default-features = false, features = ["serde", "clock", "std"] }
+dotenvy = "0.15.7"
+futures-util = "0.3.34"
+governor = "0.10.4"
+moka = { version = "0.12.16", features = ["future"] }
+opaque-ke = "4.0.1"
+rand = "0.8"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "charset", "http2", "gzip"] }
+rust-embed = { version = "8.12.0", features = ["mime-guess"] }
+scraper = "0.27.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.10"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "derive", "migrate", "uuid", "chrono"] }
+thiserror = "2.0.21"
+tokio = { version = "1.53.1", features = ["full"] }
+tokio-stream = { version = "0.1.19", features = ["sync"] }
+tokio-util = { version = "0.7.19", features = ["io"] }
+tower-http = { version = "0.7.1", features = ["trace", "set-header"] }
+tower_governor = { version = "0.8.0", default-features = false, features = ["axum"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+url = "2.5.8"
+uuid = { version = "1.26.1", features = ["v4", "serde"] }

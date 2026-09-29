@@ -1,0 +1,92 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update notes set\n           encrypted_data = coalesce($4, encrypted_data),\n           trashed_at = case\n             when $5::boolean is null then trashed_at\n             when $5 then coalesce(trashed_at, now())\n             else null\n           end,\n           version = version + 1\n         where workspace_id = $1 and id = $2 and version = $3\n         returning id, encrypted_data, version, trashed_at, created_at, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "notes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "encrypted_data",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "notes",
+            "name": "encrypted_data"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "notes",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "trashed_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "notes",
+            "name": "trashed_at"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "notes",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "notes",
+            "name": "updated_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Bytea",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "a95d662144b974a7e65fbf754069e770e07a3d13c91b4ed817225207189d11e1"
+}

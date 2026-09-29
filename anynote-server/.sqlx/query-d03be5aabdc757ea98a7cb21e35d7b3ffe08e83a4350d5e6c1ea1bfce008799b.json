@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from login_attempts where expires_at < now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "d03be5aabdc757ea98a7cb21e35d7b3ffe08e83a4350d5e6c1ea1bfce008799b"
+}

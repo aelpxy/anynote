@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "with recursive subtree as (\n             select id from collections where workspace_id = $1 and id = $2\n             union all\n             select c.id from collections c join subtree s on c.parent_id = s.id\n           )\n           select id as \"id!\" from subtree",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "f4729f4b99181eb48cccd9d2e3ddbbb1789d53112f7c42116156139ccdd61dbf"
+}

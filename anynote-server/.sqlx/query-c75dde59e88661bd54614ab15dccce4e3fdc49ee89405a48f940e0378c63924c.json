@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select w.id, m.role, w.encrypted_name, m.encrypted_workspace_key\n         from workspace_members m\n         join workspaces w on w.id = m.workspace_id\n         where m.user_id = $1\n         order by w.created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "workspaces",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "role",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "workspace_members",
+            "name": "role"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "encrypted_name",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "workspaces",
+            "name": "encrypted_name"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "encrypted_workspace_key",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "workspace_members",
+            "name": "encrypted_workspace_key"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c75dde59e88661bd54614ab15dccce4e3fdc49ee89405a48f940e0378c63924c"
+}

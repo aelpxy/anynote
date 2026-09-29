@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update workspaces set encrypted_name = $2 where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bytea"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ed1c74438b5b461d6b38e3c03ea27f78fd20c3e86cb8840937bd345eda373e08"
+}

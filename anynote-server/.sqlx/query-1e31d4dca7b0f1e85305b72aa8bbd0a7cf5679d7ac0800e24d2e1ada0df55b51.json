@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into sessions (user_id, token_hash, expires_at) values ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bytea",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1e31d4dca7b0f1e85305b72aa8bbd0a7cf5679d7ac0800e24d2e1ada0df55b51"
+}

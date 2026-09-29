@@ -1,0 +1,11 @@
+drop table changes;
+drop table attachments;
+drop table collection_notes;
+drop table collections;
+drop table notes;
+drop table workspace_members;
+drop table workspaces;
+drop table sessions;
+drop table login_attempts;
+drop table users;
+drop function set_updated_at();

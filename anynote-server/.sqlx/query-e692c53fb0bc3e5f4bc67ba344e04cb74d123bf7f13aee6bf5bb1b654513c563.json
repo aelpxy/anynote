@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update collections set\n           encrypted_name = coalesce($3, encrypted_name),\n           parent_id = case when $4 then $5 else parent_id end,\n           position = coalesce($6, position)\n         where workspace_id = $1 and id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Bytea",
+        "Bool",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e692c53fb0bc3e5f4bc67ba344e04cb74d123bf7f13aee6bf5bb1b654513c563"
+}

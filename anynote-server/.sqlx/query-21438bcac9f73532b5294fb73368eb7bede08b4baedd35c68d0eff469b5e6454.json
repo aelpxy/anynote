@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select size from attachments where workspace_id = $1 and id = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "size",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "attachments",
+            "name": "size"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "21438bcac9f73532b5294fb73368eb7bede08b4baedd35c68d0eff469b5e6454"
+}
