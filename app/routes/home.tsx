@@ -1,4 +1,5 @@
 import type { Route } from "./+types/home";
+import { ErrorPage } from "~/components/error-page";
 import { HomeGetStarted } from "~/components/home-get-started";
 import { HomeRecentNotes } from "~/components/home-recent-notes";
 import { PageHeader } from "~/components/page-header";
@@ -28,4 +29,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       </div>
     </>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorPage error={error} />;
 }

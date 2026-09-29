@@ -1,6 +1,7 @@
 import { data } from "react-router";
 
 import type { Route } from "./+types/trash";
+import { ErrorPage } from "~/components/error-page";
 import { TrashView } from "~/components/trash-view";
 import { deleteNote, emptyTrash, setNoteTrashed } from "~/lib/vault/note-mutations";
 import { getTrashedNotes } from "~/lib/vault/queries";
@@ -37,4 +38,8 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
 
 export default function TrashRoute({ loaderData }: Route.ComponentProps) {
   return <TrashView notes={loaderData.notes} />;
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorPage error={error} />;
 }
