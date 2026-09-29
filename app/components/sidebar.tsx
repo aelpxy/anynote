@@ -9,6 +9,7 @@ import { SidebarNoteLink } from "~/components/sidebar-note-link";
 import { SidebarSearchButton } from "~/components/sidebar-search-button";
 import { SidebarSection } from "~/components/sidebar-section";
 import { WorkspaceMenu } from "~/components/workspace-menu";
+import { useSidebarDropTargets } from "~/hooks/use-sidebar-drop-targets";
 import type { Collection, Note } from "~/lib/vault/types";
 
 type SidebarProps = {
@@ -24,6 +25,8 @@ export function Sidebar({
   collections,
   onSearch,
 }: SidebarProps) {
+  const dropTargets = useSidebarDropTargets();
+
   return (
     <motion.aside
       initial={{ width: 0 }}
@@ -40,7 +43,11 @@ export function Sidebar({
             <SidebarSearchButton onClick={onSearch} />
           </div>
           <nav className="mt-4 flex flex-1 flex-col gap-4 overflow-y-auto px-1.5 pb-2">
-            <SidebarSection title="Favorites">
+            <SidebarSection
+              title="Favorites"
+              isDropTarget={dropTargets.favorites.isOver}
+              dropTargetProps={dropTargets.favorites.dropTargetProps}
+            >
               {favorites.length === 0 && (
                 <SidebarEmptyState message="No favorites" />
               )}
@@ -50,6 +57,8 @@ export function Sidebar({
             </SidebarSection>
             <SidebarSection
               title="Documents"
+              isDropTarget={dropTargets.documents.isOver}
+              dropTargetProps={dropTargets.documents.dropTargetProps}
               action={<SidebarAddButton action="/notes" label="New document" />}
             >
               {documents.length === 0 && (
@@ -64,6 +73,8 @@ export function Sidebar({
             </SidebarSection>
             <SidebarSection
               title="Collections"
+              isDropTarget={dropTargets.collections.isOver}
+              dropTargetProps={dropTargets.collections.dropTargetProps}
               action={
                 <SidebarAddButton action="/collections" label="New collection" />
               }
@@ -83,9 +94,19 @@ export function Sidebar({
             </SidebarSection>
           </nav>
           <div className="border-t border-neutral-200 p-1.5 dark:border-neutral-800">
-            <SidebarLink to="/trash" icon={Trash2}>
-              Trash
-            </SidebarLink>
+            <div
+              {...dropTargets.trash.dropTargetProps}
+              className={[
+                "rounded-md transition-colors",
+                dropTargets.trash.isOver
+                  ? "bg-neutral-200 dark:bg-neutral-800"
+                  : "",
+              ].join(" ")}
+            >
+              <SidebarLink to="/trash" icon={Trash2}>
+                Trash
+              </SidebarLink>
+            </div>
           </div>
         </div>
       </div>

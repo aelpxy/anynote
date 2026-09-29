@@ -1,19 +1,32 @@
 import { Collapsible } from "@base-ui/react/collapsible";
 import { ChevronRight } from "lucide-react";
 
+import type { SidebarDropTargetProps } from "~/hooks/use-sidebar-drop-target";
+
 type SidebarSectionProps = {
   title: string;
   action?: React.ReactNode;
+  isDropTarget?: boolean;
+  dropTargetProps?: SidebarDropTargetProps;
   children: React.ReactNode;
 };
 
 export function SidebarSection({
   title,
   action,
+  isDropTarget,
+  dropTargetProps,
   children,
 }: SidebarSectionProps) {
   return (
-    <Collapsible.Root defaultOpen>
+    <Collapsible.Root
+      defaultOpen
+      {...dropTargetProps}
+      className={[
+        "rounded-md transition-colors",
+        isDropTarget ? "bg-neutral-200/60 dark:bg-neutral-800/60" : "",
+      ].join(" ")}
+    >
       <div className="group/section flex items-center">
         <Collapsible.Trigger className="group flex flex-1 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-neutral-600 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">
           {title}

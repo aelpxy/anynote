@@ -6,6 +6,8 @@ type SidebarLinkProps = {
   icon: LucideIcon;
   state?: unknown;
   isSelected?: boolean;
+  onDragStart?: React.DragEventHandler<HTMLAnchorElement>;
+  onDragEnd?: React.DragEventHandler<HTMLAnchorElement>;
   children: React.ReactNode;
 };
 
@@ -14,6 +16,8 @@ export function SidebarLink({
   icon: Icon,
   state,
   isSelected,
+  onDragStart,
+  onDragEnd,
   children,
 }: SidebarLinkProps) {
   const isRouteActive = useMatch(to) !== null;
@@ -24,6 +28,8 @@ export function SidebarLink({
       to={to}
       state={state}
       aria-current={isActive ? "page" : undefined}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       className={[
         "flex items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors",
         isActive

@@ -1,13 +1,19 @@
 import { Collapsible } from "@base-ui/react/collapsible";
 import { ChevronRight, Folder } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { CollectionContextMenuItems } from "~/components/collection-context-menu-items";
 import { SidebarContextMenu } from "~/components/sidebar-context-menu";
 import { SidebarNoteLink } from "~/components/sidebar-note-link";
 import { SidebarRenameInput } from "~/components/sidebar-rename-input";
 import { useCollectionActions } from "~/hooks/use-collection-actions";
+import { useSidebarDropActions } from "~/hooks/use-sidebar-drop-actions";
+import { useSidebarDropTarget } from "~/hooks/use-sidebar-drop-target";
+import { setSidebarDrag } from "~/lib/ui/sidebar-drag";
+import { flattenCollections } from "~/lib/vault/queries";
 import type { Collection } from "~/lib/vault/types";
+
+const expandDelayMs = 500;
 
 type SidebarCollectionProps = {
   collection: Collection;
@@ -17,10 +23,43 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const actions = useCollectionActions(collection.id);
+  const dropActions = useSidebarDropActions();
   const name = actions.pendingName ?? collection.name;
 
+  const { isOver, dropTargetProps } = useSidebarDropTarget({
+    claims: () => true,
+    canDrop: (item) =>
+      item.kind === "note"
+        ? item.collectionId !== collection.id &&
+          !collection.notes.some(({ id }) => id === item.noteId)
+        : !item.subtreeIds.includes(collection.id) &&
+          item.parentId !== collection.id,
+    onDrop: (item) => {
+      if (item.kind === "note") {
+        dropActions.addNoteToCollection(
+          item.noteId,
+          collection.id,
+          item.collectionId,
+        );
+      } else {
+        dropActions.moveCollection(item.collectionId, collection.id);
+      }
+      setIsOpen(true);
+    },
+  });
+
+  useEffect(() => {
+    if (!isOver || isOpen) return;
+    const timeout = setTimeout(() => setIsOpen(true), expandDelayMs);
+    return () => clearTimeout(timeout);
+  }, [isOver, isOpen]);
+
   return (
-    <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
+    <Collapsible.Root
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      {...dropTargetProps}
+    >
       {isRenaming ? (
         <SidebarRenameInput
           icon={Folder}
@@ -46,7 +85,30 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
             />
           }
         >
-          <Collapsible.Trigger className="group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm text-neutral-700 transition-colors hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100">
+          <Collapsible.Trigger
+            draggable
+            onDragStart={(event) => {
+              // firefox only starts a drag when some data is set
+              event.dataTransfer.setData("application/x-anynote-collection", collection.id);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setDragImage(event.currentTarget, 8, 8);
+              setSidebarDrag({
+                kind: "collection",
+                collectionId: collection.id,
+                parentId: collection.parentId,
+                subtreeIds: flattenCollections([collection]).map(
+                  (option) => option.collection.id,
+                ),
+              });
+            }}
+            onDragEnd={() => setSidebarDrag(null)}
+            className={[
+              "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors",
+              isOver
+                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+                : "text-neutral-700 hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100",
+            ].join(" ")}
+          >
             <Folder className="size-4 shrink-0" />
             <span className="flex-1 truncate text-left">{name}</span>
             <ChevronRight className="size-3.5 shrink-0 transition-[rotate] duration-150 ease-out group-data-panel-open:rotate-90 motion-reduce:transition-none" />

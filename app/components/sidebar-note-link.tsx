@@ -7,6 +7,7 @@ import { SidebarLink } from "~/components/sidebar-link";
 import { SidebarRenameInput } from "~/components/sidebar-rename-input";
 import { useNoteActions } from "~/hooks/use-note-actions";
 import { useSidebarSelection } from "~/hooks/use-sidebar-selection";
+import { setSidebarDrag } from "~/lib/ui/sidebar-drag";
 import type { Note } from "~/lib/vault/types";
 
 type SidebarNoteLinkProps = {
@@ -57,6 +58,16 @@ export function SidebarNoteLink({
         icon={FileText}
         state={selection.state}
         isSelected={selection.isSelected}
+        onDragStart={(event) => {
+          event.dataTransfer.setDragImage(event.currentTarget, 8, 8);
+          setSidebarDrag({
+            kind: "note",
+            noteId: note.id,
+            collectionId,
+            isFavorite: note.isFavorite,
+          });
+        }}
+        onDragEnd={() => setSidebarDrag(null)}
       >
         {title}
       </SidebarLink>
