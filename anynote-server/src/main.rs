@@ -77,6 +77,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let app = app::router(state, ip_config);
 
+    tokio::task::spawn_blocking(web::warm_compression_cache);
+
     let listener = TcpListener::bind(&config.addr).await?;
     tracing::info!("listening on {}", config.addr);
 

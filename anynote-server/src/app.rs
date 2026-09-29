@@ -6,7 +6,14 @@ use axum::{
     http::{HeaderName, HeaderValue, StatusCode},
     routing::get,
 };
-use tower_http::{set_header::SetResponseHeaderLayer, trace::TraceLayer};
+use tower_http::{
+    compression::{
+        CompressionLayer, CompressionLevel,
+        predicate::{DefaultPredicate, NotForContentType, Predicate},
+    },
+    set_header::SetResponseHeaderLayer,
+    trace::TraceLayer,
+};
 
 use crate::{
     account, attachments, auth, changes, collections, http::rate_limit::IpGovernorConfig,
@@ -35,6 +42,14 @@ pub fn router(state: AppState, ip_config: Arc<IpGovernorConfig>) -> Router {
 
     // responses carry session tokens and ciphertext, so nothing in between should keep a copy
     let api = api
+        .layer(
+            CompressionLayer::new()
+                .quality(CompressionLevel::Precise(5))
+                .compress_when(
+                    DefaultPredicate::new()
+                        .and(NotForContentType::const_new("application/octet-stream")),
+                ),
+        )
         .layer(security_header("cache-control", "no-store"))
         .layer(security_header(
             "content-security-policy",
