@@ -23,8 +23,8 @@ pub async fn events(
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, AppError> {
     authorize(&state.db, workspace_id, auth.user_id, Access::Read).await?;
 
-    let stream =
-        BroadcastStream::new(state.changes.subscribe()).filter_map(move |message| async move {
+    let stream = BroadcastStream::new(state.changes.subscribe())
+        .filter_map(move |message| async move {
             match message {
                 Ok(change) if change.workspace_id == workspace_id => Some(Ok(Event::default()
                     .event("change")
@@ -34,7 +34,8 @@ pub async fn events(
                     Some(Ok(Event::default().event("change").data("")))
                 }
             }
-        });
+        })
+        .take_until(state.shutdown.cancelled_owned());
 
     Ok(Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(20))))
 }

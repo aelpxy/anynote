@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use sqlx::PgPool;
+use tokio_util::sync::CancellationToken;
 
 use crate::{
     auth::opaque::OpaqueServerSetup,
@@ -21,4 +22,5 @@ pub struct AppState {
     pub preview_cache: PreviewCache,
     pub preview_limiter: Arc<PreviewLimiter>,
     pub changes: ChangeSender,
+    pub shutdown: CancellationToken,
 }

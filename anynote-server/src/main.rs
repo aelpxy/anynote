@@ -22,6 +22,7 @@ use std::{net::SocketAddr, sync::Arc};
 
 use sqlx::postgres::PgPoolOptions;
 use tokio::{net::TcpListener, signal};
+use tokio_util::sync::CancellationToken;
 use tracing_subscriber::EnvFilter;
 
 use crate::{config::Config, http::rate_limit, state::AppState, storage::LocalStorage};
@@ -61,6 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ip_config.clone(),
     );
 
+    let shutdown = CancellationToken::new();
     let state = AppState {
         db,
         opaque: Arc::new(opaque),
@@ -71,6 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         preview_cache: link_preview::cache(),
         preview_limiter,
         changes,
+        shutdown: shutdown.clone(),
     };
     let app = app::router(state, ip_config);
 
@@ -82,7 +85,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-    .with_graceful_shutdown(shutdown_signal())
+    .with_graceful_shutdown(async move {
+        shutdown_signal().await;
+        shutdown.cancel();
+    })
     .await?;
 
     Ok(())
