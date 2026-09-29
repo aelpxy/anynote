@@ -3,7 +3,7 @@ import { useMatch, useNavigate, useSubmit } from "react-router";
 
 import { setOpenDialog } from "~/lib/ui/dialog-store";
 import { toggleFocusMode, toggleSidebar } from "~/lib/ui/layout-store";
-import { isTypingTarget } from "~/lib/ui/shortcuts";
+import { isTypingTarget, saveNowEvent } from "~/lib/ui/shortcuts";
 import type { Note } from "~/lib/vault/types";
 
 export function useAppShortcuts(documents: Note[]) {
@@ -27,7 +27,10 @@ export function useAppShortcuts(documents: Note[]) {
     const isMod = event.metaKey || event.ctrlKey;
 
     let action: (() => void) | null = null;
-    if (isMod && !event.altKey && event.key === "\\") action = toggleSidebar;
+    // notes save on their own; this only keeps the browser's "save page" dialog away and saves right now
+    if (isMod && !event.altKey && event.key.toLowerCase() === "s") {
+      action = () => window.dispatchEvent(new Event(saveNowEvent));
+    } else if (isMod && !event.altKey && event.key === "\\") action = toggleSidebar;
     else if (isMod && !event.altKey && event.key === ".") action = toggleFocusMode;
     else if (isMod && event.altKey && event.code === "KeyN") {
       action = () => submit(null, { method: "post", action: "/notes" });

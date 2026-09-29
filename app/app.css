@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/source-serif-4";
 @import "./editor.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -10,6 +11,10 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo,
     monospace;
+  --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
+  --font-system: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* the font notes are written in; swapped by the note font setting */
+  --font-note: var(--font-sans);
   --animate-appear-delayed: appear 200ms ease-out 200ms both;
 
   @keyframes appear {
@@ -17,6 +22,44 @@
       opacity: 0;
     }
   }
+}
+
+:root {
+  --note-text-size: 1rem;
+  --note-line-height: 1.75;
+  --note-page-width: 48rem;
+}
+
+:root[data-note-size="small"] {
+  --note-text-size: 0.9375rem;
+}
+
+:root[data-note-size="large"] {
+  --note-text-size: 1.125rem;
+}
+
+:root[data-note-spacing="compact"] {
+  --note-line-height: 1.55;
+}
+
+:root[data-note-spacing="relaxed"] {
+  --note-line-height: 2;
+}
+
+:root[data-note-width="wide"] {
+  --note-page-width: 100%;
+}
+
+:root[data-note-font="serif"] {
+  --font-note: var(--font-serif);
+}
+
+:root[data-note-font="mono"] {
+  --font-note: var(--font-mono);
+}
+
+:root[data-note-font="system"] {
+  --font-note: var(--font-system);
 }
 
 html,

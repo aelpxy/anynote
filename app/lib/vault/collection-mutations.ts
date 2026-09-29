@@ -9,6 +9,7 @@ import {
 } from "~/lib/api/collections";
 import { encryptCollectionName } from "~/lib/vault/codec";
 import { trackCollectionWrite } from "~/lib/vault/collection-writes";
+import { isStatus, withRetry } from "~/lib/vault/connection";
 import type { Placement, Vault } from "~/lib/vault/types";
 
 function requireCollection(vault: Vault, collectionId: string) {
@@ -24,31 +25,35 @@ function getSubtreeIds(vault: Vault, collectionId: string): string[] {
   return [collectionId, ...children.flatMap((child) => getSubtreeIds(vault, child.id))];
 }
 
-export async function createCollection(vault: Vault, parentId: string | null) {
+export function createCollection(vault: Vault, parentId: string | null) {
   const id = crypto.randomUUID();
   const name = "Untitled collection";
   const siblings = [...vault.collections.values()].filter(
     (collection) => collection.parentId === parentId,
   );
   const position = Math.max(0, ...siblings.map((collection) => collection.position + 1));
-  await createCollectionRecord(vault.token, vault.workspaceId, {
-    id,
-    parentId,
-    encryptedName: await encryptCollectionName(vault, id, name),
-    position,
-  });
-
   vault.collections.set(id, { id, parentId, name, position, noteIds: [] });
+
+  return trackCollectionWrite(async () => {
+    const encryptedName = await encryptCollectionName(vault, id, name);
+    await withRetry(() =>
+      createCollectionRecord(vault.token, vault.workspaceId, { id, parentId, encryptedName, position }),
+    ).catch((error: unknown) => {
+      // a retry after a lost response finds the collection already created
+      if (!isStatus(error, 409)) throw error;
+    });
+  });
 }
 
 export function renameCollection(vault: Vault, collectionId: string, name: string) {
   const collection = requireCollection(vault, collectionId);
   vault.collections.set(collectionId, { ...collection, name });
-  return trackCollectionWrite(async () =>
-    updateCollectionRecord(vault.token, vault.workspaceId, collectionId, {
-      encryptedName: await encryptCollectionName(vault, collectionId, name),
-    }),
-  );
+  return trackCollectionWrite(async () => {
+    const encryptedName = await encryptCollectionName(vault, collectionId, name);
+    await withRetry(() =>
+      updateCollectionRecord(vault.token, vault.workspaceId, collectionId, { encryptedName }),
+    );
+  });
 }
 
 function setParent(vault: Vault, collectionId: string, parentId: string | null) {
@@ -67,7 +72,9 @@ function setParent(vault: Vault, collectionId: string, parentId: string | null) 
 export function moveCollection(vault: Vault, collectionId: string, parentId: string | null) {
   const position = setParent(vault, collectionId, parentId);
   return trackCollectionWrite(() =>
-    updateCollectionRecord(vault.token, vault.workspaceId, collectionId, { parentId, position }),
+    withRetry(() =>
+      updateCollectionRecord(vault.token, vault.workspaceId, collectionId, { parentId, position }),
+    ),
   );
 }
 
@@ -76,7 +83,11 @@ export function deleteCollection(vault: Vault, collectionId: string) {
     vault.collections.delete(id);
   }
   return trackCollectionWrite(() =>
-    deleteCollectionRecord(vault.token, vault.workspaceId, collectionId),
+    withRetry(() => deleteCollectionRecord(vault.token, vault.workspaceId, collectionId)).catch(
+      (error: unknown) => {
+        if (!isStatus(error, 404)) throw error;
+      },
+    ),
   );
 }
 
@@ -89,7 +100,7 @@ function addNoteLocally(vault: Vault, collectionId: string, noteId: string) {
 export function addNoteToCollection(vault: Vault, collectionId: string, noteId: string) {
   addNoteLocally(vault, collectionId, noteId);
   return trackCollectionWrite(() =>
-    addNoteToCollectionRecord(vault.token, vault.workspaceId, collectionId, noteId),
+    withRetry(() => addNoteToCollectionRecord(vault.token, vault.workspaceId, collectionId, noteId)),
   );
 }
 
@@ -100,7 +111,9 @@ export function removeNoteFromCollection(vault: Vault, collectionId: string, not
     noteIds: collection.noteIds.filter((id) => id !== noteId),
   });
   return trackCollectionWrite(() =>
-    removeNoteFromCollectionRecord(vault.token, vault.workspaceId, collectionId, noteId),
+    withRetry(() =>
+      removeNoteFromCollectionRecord(vault.token, vault.workspaceId, collectionId, noteId),
+    ),
   );
 }
 
@@ -125,9 +138,11 @@ export function placeCollection(vault: Vault, collectionId: string, placement: P
 
   return trackCollectionWrite(async () => {
     if (parentChanged) {
-      await updateCollectionRecord(vault.token, vault.workspaceId, collectionId, { parentId });
+      await withRetry(() =>
+        updateCollectionRecord(vault.token, vault.workspaceId, collectionId, { parentId }),
+      );
     }
-    await reorderCollectionRecords(vault.token, vault.workspaceId, ids);
+    await withRetry(() => reorderCollectionRecords(vault.token, vault.workspaceId, ids));
   });
 }
 
@@ -156,10 +171,14 @@ export function placeNotesInCollection(
   return trackCollectionWrite(async () => {
     // one at a time so the server appends them in order
     for (const noteId of noteIds) {
-      await addNoteToCollectionRecord(vault.token, vault.workspaceId, collectionId, noteId);
+      await withRetry(() =>
+        addNoteToCollectionRecord(vault.token, vault.workspaceId, collectionId, noteId),
+      );
     }
     if (ordered) {
-      await reorderCollectionNoteRecords(vault.token, vault.workspaceId, collectionId, ordered);
+      await withRetry(() =>
+        reorderCollectionNoteRecords(vault.token, vault.workspaceId, collectionId, ordered),
+      );
     }
   });
 }

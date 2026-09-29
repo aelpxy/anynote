@@ -1,3 +1,5 @@
+export const saveNowEvent = "anynote:save-now";
+
 export type Shortcut = {
   keys: string[];
   label: string;
@@ -13,6 +15,7 @@ export const shortcutGroups: ShortcutGroup[] = [
     heading: "General",
     shortcuts: [
       { keys: ["Mod", "K"], label: "Search and commands" },
+      { keys: ["Mod", "S"], label: "Save now" },
       { keys: ["Mod", "Alt", "N"], label: "New note" },
       { keys: ["?"], label: "Keyboard shortcuts" },
     ],

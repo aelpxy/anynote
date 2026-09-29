@@ -55,7 +55,13 @@ export function getTrashedNotes(vault: Vault) {
 export function getNote(vault: Vault, id: string): NoteWithContent | undefined {
   const note = vault.notes.get(id);
   return note && note.trashedAt === null
-    ? { ...toNote(note), content: note.content, revision: note.revision }
+    ? {
+        ...toNote(note),
+        content: note.content,
+        revision: note.revision,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      }
     : undefined;
 }
 

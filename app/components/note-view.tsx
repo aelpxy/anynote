@@ -1,17 +1,20 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ExportMenu } from "~/components/export-menu";
 import { MoveToTrashButton } from "~/components/move-to-trash-button";
 import { NoteBreadcrumbs } from "~/components/note-breadcrumbs";
 import { NoteEditor } from "~/components/note-editor";
 import { NoteIconPicker } from "~/components/note-icon-picker";
+import { NoteInfoButton } from "~/components/note-info-button";
 import { NoteOutline } from "~/components/note-outline";
 import { NoteStatus } from "~/components/note-status";
 import { NoteTitleInput } from "~/components/note-title-input";
 import { PageHeader } from "~/components/page-header";
+import { useConnection } from "~/hooks/use-connection";
 import { useDebouncedCallback } from "~/hooks/use-debounced-callback";
 import { useNoteActions } from "~/hooks/use-note-actions";
 import { usePageFileDrop } from "~/hooks/use-page-file-drop";
+import { saveNowEvent } from "~/lib/ui/shortcuts";
 import type { NoteWithContent } from "~/lib/vault/types";
 
 type NoteViewProps = {
@@ -31,6 +34,12 @@ export function NoteView({ note }: NoteViewProps) {
   }, 500);
   usePageFileDrop(editorRef);
 
+  useEffect(() => {
+    const flush = saveContent.flush;
+    window.addEventListener(saveNowEvent, flush);
+    return () => window.removeEventListener(saveNowEvent, flush);
+  }, [saveContent.flush]);
+
   function handleContentChange(content: string) {
     latestContentRef.current = content;
     setMarkdown(content);
@@ -39,8 +48,15 @@ export function NoteView({ note }: NoteViewProps) {
     saveContent(content);
   }
 
-  const saveState =
-    hasUnsavedEdits || actions.isSaving ? "saving" : hasEdited ? "saved" : "idle";
+  const { isOffline } = useConnection();
+  const isSaving = hasUnsavedEdits || actions.isSaving;
+  const saveState = isSaving
+    ? isOffline
+      ? "unsynced"
+      : "saving"
+    : hasEdited
+      ? "saved"
+      : "idle";
 
   function focusEditor() {
     editorRef.current?.querySelector<HTMLElement>(".ProseMirror")?.focus();
@@ -53,6 +69,7 @@ export function NoteView({ note }: NoteViewProps) {
         actions={
           <>
             <NoteStatus markdown={markdown} saveState={saveState} />
+            <NoteInfoButton note={note} markdown={markdown} />
             <ExportMenu
               title={note.title}
               getMarkdown={() => latestContentRef.current}
@@ -61,7 +78,7 @@ export function NoteView({ note }: NoteViewProps) {
           </>
         }
       />
-      <article className="mx-auto max-w-3xl px-12 pt-2">
+      <article className="mx-auto max-w-(--note-page-width) px-12 pt-2">
         <div className="group/title">
           <NoteIconPicker icon={note.icon} onChange={actions.setIcon} />
           <NoteTitleInput note={note} onContinue={focusEditor} />

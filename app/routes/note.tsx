@@ -1,6 +1,7 @@
 import { data, redirect } from "react-router";
 
 import type { Route } from "./+types/note";
+import { ErrorPage } from "~/components/error-page";
 import { NoteView } from "~/components/note-view";
 import {
   addNoteToCollection,
@@ -52,7 +53,7 @@ export async function clientAction({ params, request }: Route.ClientActionArgs) 
       runInBackground(updateNote(vault, noteId, { isFavorite: false }));
       return null;
     case "duplicate":
-      await duplicateNote(vault, noteId);
+      runInBackground(duplicateNote(vault, noteId).saved);
       return null;
     case "add-to-collection":
       runInBackground(addNoteToCollection(vault, String(formData.get("collectionId")), noteId));
@@ -79,4 +80,8 @@ export function meta({ loaderData }: Route.MetaArgs) {
 export default function NoteRoute({ loaderData }: Route.ComponentProps) {
   const { note } = loaderData;
   return <NoteView key={`${note.id}:${note.revision}`} note={note} />;
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorPage error={error} />;
 }

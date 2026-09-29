@@ -1,5 +1,6 @@
 import { Minimize2 } from "lucide-react";
 
+import { OfflineIndicator } from "~/components/offline-indicator";
 import { useLayout } from "~/hooks/use-layout";
 import { toggleFocusMode } from "~/lib/ui/layout-store";
 
@@ -27,6 +28,7 @@ export function PageHeader({ leading, actions }: PageHeaderProps) {
       >
         {leading}
       </div>
+      <OfflineIndicator />
       {actions}
       {isFocusMode && (
         <button

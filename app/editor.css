@@ -57,7 +57,9 @@ img.ProseMirror-separator {
 }
 
 .note-editor .ProseMirror {
-  @apply min-h-[60vh] pb-[30vh] text-base leading-7 text-neutral-800 caret-neutral-900 outline-none selection:bg-neutral-300 dark:text-neutral-200 dark:caret-neutral-100 dark:selection:bg-neutral-700;
+  font-size: var(--note-text-size);
+  line-height: var(--note-line-height);
+  @apply min-h-[60vh] pb-[30vh] text-neutral-800 caret-neutral-900 outline-none selection:bg-neutral-300 dark:text-neutral-200 dark:caret-neutral-100 dark:selection:bg-neutral-700;
 
   & .ProseMirror-selectednode {
     @apply rounded-sm outline-2 outline-offset-2 outline-neutral-400 dark:outline-neutral-600;
@@ -88,16 +90,17 @@ img.ProseMirror-separator {
     @apply absolute top-0 -left-6 w-5 text-center font-normal text-neutral-400 no-underline opacity-0 transition-opacity duration-150 select-none hover:text-neutral-700 focus-visible:opacity-100 motion-reduce:transition-none dark:text-neutral-600 dark:hover:text-neutral-300;
   }
 
+  /* em so headings scale with the text size setting */
   & h1 {
-    @apply mt-8 text-2xl;
+    @apply mt-8 text-[1.5em] leading-snug;
   }
 
   & h2 {
-    @apply mt-6 text-xl;
+    @apply mt-6 text-[1.25em] leading-snug;
   }
 
   & h3 {
-    @apply mt-5 text-lg;
+    @apply mt-5 text-[1.125em] leading-snug;
   }
 
   & a {

@@ -1,5 +1,6 @@
 import { Command } from "cmdk";
 import {
+  Columns2,
   FilePlus,
   Home,
   Keyboard,
@@ -12,6 +13,7 @@ import {
   Settings,
   Sun,
   Trash2,
+  Type,
   User,
   type LucideIcon,
 } from "lucide-react";
@@ -21,6 +23,7 @@ import { useFetcher, useNavigate, useSubmit } from "react-router";
 import { CommandPaletteItem } from "~/components/command-palette-item";
 import { CommandPaletteNoteItem } from "~/components/command-palette-note-item";
 import { useTheme } from "~/hooks/use-theme";
+import { setNoteAppearance } from "~/lib/note-appearance";
 import { setOpenDialog } from "~/lib/ui/dialog-store";
 import { toggleFocusMode, toggleSidebar } from "~/lib/ui/layout-store";
 import type { clientLoader as searchLoader } from "~/routes/search";
@@ -143,6 +146,27 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
           label: "Use system theme",
           icon: Monitor,
           run: () => setTheme("system"),
+        },
+      ],
+    },
+    {
+      heading: "Note appearance",
+      commands: [
+        { id: "font-default", label: "Use default font", icon: Type, run: () => setNoteAppearance("font", "default") },
+        { id: "font-serif", label: "Use serif font", icon: Type, run: () => setNoteAppearance("font", "serif") },
+        { id: "font-mono", label: "Use mono font", icon: Type, run: () => setNoteAppearance("font", "mono") },
+        { id: "font-system", label: "Use system font", icon: Type, run: () => setNoteAppearance("font", "system") },
+        {
+          id: "width-normal",
+          label: "Use normal page width",
+          icon: Columns2,
+          run: () => setNoteAppearance("width", "normal"),
+        },
+        {
+          id: "width-wide",
+          label: "Use full page width",
+          icon: Columns2,
+          run: () => setNoteAppearance("width", "wide"),
         },
       ],
     },

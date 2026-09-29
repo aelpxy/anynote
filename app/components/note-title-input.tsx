@@ -27,7 +27,7 @@ export function NoteTitleInput({ note, onContinue }: NoteTitleInputProps) {
           onContinue();
         }
       }}
-      className="field-sizing-content w-full resize-none bg-transparent text-3xl font-bold tracking-tight text-neutral-900 outline-none placeholder:text-neutral-400 dark:text-neutral-100 dark:placeholder:text-neutral-600"
+      className="field-sizing-content w-full font-note resize-none bg-transparent text-3xl font-bold tracking-tight text-neutral-900 outline-none placeholder:text-neutral-400 dark:text-neutral-100 dark:placeholder:text-neutral-600"
     />
   );
 }

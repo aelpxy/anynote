@@ -10,6 +10,8 @@ export type NoteWithContent = Note & {
   content: string;
   // bumps when another tab or device changes the note, so an open editor reloads
   revision: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Collection = {

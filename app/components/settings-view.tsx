@@ -3,6 +3,7 @@ import { useNavigate, useRevalidator } from "react-router";
 
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";
 import { DeleteWorkspaceButton } from "~/components/delete-workspace-button";
+import { NoteAppearanceSettings } from "~/components/note-appearance-settings";
 import { RenameWorkspaceForm } from "~/components/rename-workspace-form";
 import { SettingsSection } from "~/components/settings-section";
 import { ThemeSelector } from "~/components/theme-selector";
@@ -33,6 +34,10 @@ export function SettingsView() {
       <div>
         <SettingsSection title="Appearance">
           <ThemeSelector />
+        </SettingsSection>
+
+        <SettingsSection title="Notes">
+          <NoteAppearanceSettings />
         </SettingsSection>
 
         {currentWorkspace && (

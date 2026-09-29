@@ -8,8 +8,9 @@ import {
   updateNoteRecord,
 } from "~/lib/api/notes";
 import { encryptNote } from "~/lib/vault/codec";
+import { isStatus, withRetry } from "~/lib/vault/connection";
 import { getActiveNotes, getSortKey } from "~/lib/vault/queries";
-import { enqueue } from "~/lib/vault/queue";
+import { enqueue, enqueueLatest } from "~/lib/vault/queue";
 import type { NoteContent, Placement, Vault, VaultNote } from "~/lib/vault/types";
 
 function applyRecord(vault: Vault, note: VaultNote, record: NoteRecord) {
@@ -34,48 +35,59 @@ async function patchNote(
   noteId: string,
   changes: { content?: NoteContent; trashed?: boolean },
 ) {
-  const send = async (baseVersion: number) =>
-    updateNoteRecord(vault.token, vault.workspaceId, noteId, {
-      baseVersion,
-      encryptedData: changes.content && (await encryptNote(vault, noteId, changes.content)),
-      trashed: changes.trashed,
-    });
+  const encryptedData = changes.content && (await encryptNote(vault, noteId, changes.content));
+  const send = (baseVersion: number) =>
+    withRetry(() =>
+      updateNoteRecord(vault.token, vault.workspaceId, noteId, {
+        baseVersion,
+        encryptedData,
+        trashed: changes.trashed,
+      }),
+    );
 
   const note = requireNote(vault, noteId);
   try {
     return applyRecord(vault, note, await send(note.version));
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 409) throw error;
-    // another tab or device saved first; this edit is the newer one, so apply it on top
-    const latest = await getNoteRecord(vault.token, vault.workspaceId, noteId);
+    // another tab or device saved first, or a retried save already landed; this edit is the newest
+    const latest = await withRetry(() => getNoteRecord(vault.token, vault.workspaceId, noteId));
     return applyRecord(vault, requireNote(vault, noteId), await send(latest.version));
   }
 }
 
-export async function createNote(vault: Vault, content: Partial<NoteContent> = {}) {
+// the note exists locally right away; the server copy is created in the background, even while offline
+export function createNote(vault: Vault, content: Partial<NoteContent> = {}) {
   const id = crypto.randomUUID();
+  const now = new Date().toISOString();
   const noteContent: NoteContent = {
     title: content.title ?? "Untitled",
     content: content.content ?? "",
     isFavorite: content.isFavorite ?? false,
     icon: content.icon,
   };
-
-  const record = await createNoteRecord(vault.token, vault.workspaceId, {
-    id,
-    encryptedData: await encryptNote(vault, id, noteContent),
-  });
   const note: VaultNote = {
     ...noteContent,
     id,
-    version: record.version,
-    trashedAt: record.trashedAt,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
+    version: 0,
+    trashedAt: null,
+    createdAt: now,
+    updatedAt: now,
     revision: 0,
   };
   vault.notes.set(id, note);
-  return note;
+
+  const saved = enqueue(id, async () => {
+    const encryptedData = await encryptNote(vault, id, noteContent);
+    const record = await withRetry(() =>
+      createNoteRecord(vault.token, vault.workspaceId, { id, encryptedData }),
+    ).catch((error: unknown) => {
+      if (!isStatus(error, 409)) throw error;
+      return withRetry(() => getNoteRecord(vault.token, vault.workspaceId, id));
+    });
+    applyRecord(vault, requireNote(vault, id), record);
+  });
+  return { note, saved };
 }
 
 export function updateNote(vault: Vault, noteId: string, changes: Partial<NoteContent>) {
@@ -83,7 +95,7 @@ export function updateNote(vault: Vault, noteId: string, changes: Partial<NoteCo
   const note = requireNote(vault, noteId);
   vault.notes.set(noteId, { ...note, ...changes });
 
-  return enqueue(noteId, () => {
+  return enqueueLatest(noteId, () => {
     const { title, content, isFavorite, position, icon } = requireNote(vault, noteId);
     return patchNote(vault, noteId, { content: { title, content, isFavorite, position, icon } });
   });
@@ -107,7 +119,13 @@ function forgetNote(vault: Vault, noteId: string) {
 
 export function deleteNote(vault: Vault, noteId: string) {
   forgetNote(vault, noteId);
-  return enqueue(noteId, () => deleteNoteRecord(vault.token, vault.workspaceId, noteId));
+  return enqueue(noteId, () =>
+    withRetry(() => deleteNoteRecord(vault.token, vault.workspaceId, noteId)).catch(
+      (error: unknown) => {
+        if (!isStatus(error, 404)) throw error;
+      },
+    ),
+  );
 }
 
 export function duplicateNote(vault: Vault, noteId: string) {
@@ -119,7 +137,7 @@ export function emptyTrash(vault: Vault) {
   for (const note of [...vault.notes.values()]) {
     if (note.trashedAt !== null) forgetNote(vault, note.id);
   }
-  return emptyTrashRecords(vault.token, vault.workspaceId);
+  return enqueue("trash", () => withRetry(() => emptyTrashRecords(vault.token, vault.workspaceId)));
 }
 
 const positionGap = 1024;

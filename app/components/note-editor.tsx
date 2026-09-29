@@ -21,7 +21,7 @@ function showCopiedFeedback(event: React.MouseEvent<HTMLDivElement>) {
 
 export function NoteEditor({ ref, defaultValue, onChange }: NoteEditorProps) {
   return (
-    <div ref={ref} className="note-editor" onClick={showCopiedFeedback}>
+    <div ref={ref} className="note-editor font-note" onClick={showCopiedFeedback}>
       <MilkdownProvider>
         <NoteEditorContent defaultValue={defaultValue} onChange={onChange} />
       </MilkdownProvider>

@@ -11,6 +11,7 @@ import { useCrossTabLock } from "~/hooks/use-cross-tab-lock";
 import { useHotkey } from "~/hooks/use-hotkey";
 import { useLayout } from "~/hooks/use-layout";
 import { usePreventFileNavigation } from "~/hooks/use-prevent-file-navigation";
+import { useUnsyncedChangesWarning } from "~/hooks/use-unsynced-changes-warning";
 import { useVaultSync } from "~/hooks/use-vault-sync";
 import { toggleSidebar } from "~/lib/ui/layout-store";
 import type { Collection, Note } from "~/lib/vault/types";
@@ -37,6 +38,7 @@ export function AppShell({
   useVaultSync();
   useCrossTabLock();
   usePreventFileNavigation();
+  useUnsyncedChangesWarning();
 
   return (
     <div className="relative flex h-dvh print:block print:h-auto">
