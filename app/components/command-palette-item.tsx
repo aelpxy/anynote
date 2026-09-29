@@ -18,7 +18,7 @@ export function CommandPaletteItem({
     <Command.Item
       value={value}
       onSelect={onSelect}
-      className="flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 select-none data-[selected=true]:bg-neutral-100 data-[selected=true]:text-neutral-900 dark:text-neutral-300 dark:data-[selected=true]:bg-neutral-700 dark:data-[selected=true]:text-neutral-100"
+      className="flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 select-none data-[selected=true]:bg-neutral-100 data-[selected=true]:text-neutral-900 dark:text-neutral-300 dark:data-[selected=true]:bg-neutral-800 dark:data-[selected=true]:text-neutral-100"
     >
       <Icon className="size-4 shrink-0" />
       {children}

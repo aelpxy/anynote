@@ -1,4 +1,6 @@
 import { Monitor, Moon, Sun } from "lucide-react";
+import { motion } from "motion/react";
+import { useId } from "react";
 
 import { useTheme } from "~/hooks/use-theme";
 import type { Theme } from "~/lib/theme";
@@ -12,6 +14,7 @@ const options: { value: Theme; label: string; icon: typeof Sun }[] = [
 
 export function ThemeSelector() {
   const { theme, setTheme } = useTheme();
+  const thumbId = useId();
 
   return (
     <div
@@ -30,8 +33,15 @@ export function ThemeSelector() {
           aria-checked={theme === value}
           tabIndex={theme === value ? 0 : -1}
           onClick={() => setTheme(value)}
-          className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md border border-neutral-300 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 aria-checked:border-neutral-900 aria-checked:font-medium aria-checked:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:aria-checked:border-neutral-100 dark:aria-checked:text-neutral-100"
+          className="relative flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md border border-neutral-300 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 aria-checked:font-medium aria-checked:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:aria-checked:text-neutral-100"
         >
+          {theme === value && (
+            <motion.span
+              layoutId={thumbId}
+              transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
+              className="absolute -inset-px rounded-md border border-neutral-900 dark:border-neutral-100"
+            />
+          )}
           <Icon className="size-4" />
           {label}
         </button>

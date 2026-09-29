@@ -1,3 +1,6 @@
+import { motion } from "motion/react";
+import { useId } from "react";
+
 import { handleRadioGroupKeyDown } from "~/lib/ui/radio-group";
 
 type SegmentedControlProps<Value extends string> = {
@@ -13,6 +16,8 @@ export function SegmentedControl<Value extends string>({
   options,
   onChange,
 }: SegmentedControlProps<Value>) {
+  const thumbId = useId();
+
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="text-sm text-neutral-700 dark:text-neutral-300">{label}</span>
@@ -32,9 +37,16 @@ export function SegmentedControl<Value extends string>({
             aria-checked={value === option.value}
             tabIndex={value === option.value ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className="rounded px-2.5 py-1 text-xs text-neutral-600 transition-colors hover:text-neutral-900 aria-checked:bg-neutral-900 aria-checked:font-medium aria-checked:text-white dark:text-neutral-400 dark:hover:text-neutral-100 dark:aria-checked:bg-neutral-100 dark:aria-checked:text-neutral-900"
+            className="relative rounded px-2.5 py-1 text-xs text-neutral-600 transition-colors hover:text-neutral-900 aria-checked:font-medium aria-checked:text-white dark:text-neutral-400 dark:hover:text-neutral-100 dark:aria-checked:text-neutral-900"
           >
-            {option.label}
+            {value === option.value && (
+              <motion.span
+                layoutId={thumbId}
+                transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
+                className="absolute inset-0 rounded bg-neutral-900 dark:bg-neutral-100"
+              />
+            )}
+            <span className="relative">{option.label}</span>
           </button>
         ))}
       </div>

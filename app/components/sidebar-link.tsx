@@ -10,6 +10,7 @@ type SidebarLinkProps = {
   isHighlighted?: boolean;
   onClick?: React.MouseEventHandler<HTMLAnchorElement>;
   onDoubleClick?: React.MouseEventHandler<HTMLAnchorElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLAnchorElement>;
   onDragStart?: React.DragEventHandler<HTMLAnchorElement>;
   onDragEnd?: React.DragEventHandler<HTMLAnchorElement>;
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export function SidebarLink({
   isHighlighted,
   onClick,
   onDoubleClick,
+  onKeyDown,
   onDragStart,
   onDragEnd,
   children,
@@ -38,10 +40,11 @@ export function SidebarLink({
       aria-current={isActive ? "page" : undefined}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onKeyDown={onKeyDown}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={[
-        "flex items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors pointer-coarse:py-2 group-hover/row:pr-7 pointer-coarse:pr-7",
+        "flex items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-[color,background-color,scale] duration-150 active:scale-[0.985] motion-reduce:active:scale-100 pointer-coarse:py-2 group-hover/row:pr-7 pointer-coarse:pr-7",
         isActive
           ? "bg-neutral-200 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
           : isHighlighted

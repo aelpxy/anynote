@@ -28,6 +28,8 @@ export function AppDialogs() {
       </Modal>
       <Modal open={openDialog === "create-workspace"} onOpenChange={onOpenChange} title="New workspace">
         <CreateWorkspaceForm
+          autoFocus
+          onCancel={() => setOpenDialog(null)}
           onCreated={(workspace) => {
             setOpenDialog(null);
             setCurrentWorkspace(workspace.id);
@@ -36,7 +38,7 @@ export function AppDialogs() {
           }}
         />
       </Modal>
-      <Modal open={openDialog === "shortcuts"} onOpenChange={onOpenChange} title="Keyboard shortcuts">
+      <Modal open={openDialog === "shortcuts"} onOpenChange={onOpenChange} title="Keyboard shortcuts" size="md">
         <KeyboardShortcutsView />
       </Modal>
     </>

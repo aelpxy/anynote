@@ -9,6 +9,7 @@ type SidebarContextMenuProps = {
   label: string;
   // collection rows keep their chevron at the end, so the button sits just before it
   buttonPosition?: "end" | "before-chevron";
+  extraAction?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -16,6 +17,7 @@ export function SidebarContextMenu({
   menu,
   label,
   buttonPosition = "end",
+  extraAction,
   children,
 }: SidebarContextMenuProps) {
   return (
@@ -30,6 +32,7 @@ export function SidebarContextMenu({
           </ContextMenu.Positioner>
         </ContextMenu.Portal>
       </ContextMenu.Root>
+      {extraAction}
       <Menu.Root>
         <Menu.Trigger
           aria-label={`${label} options`}

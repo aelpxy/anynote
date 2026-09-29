@@ -117,6 +117,21 @@ export function removeNoteFromCollection(vault: Vault, collectionId: string, not
   );
 }
 
+export function addNewNoteToCollection(
+  vault: Vault,
+  collectionId: string,
+  noteId: string,
+  noteCreated: Promise<unknown>,
+) {
+  addNoteLocally(vault, collectionId, noteId);
+  return trackCollectionWrite(async () => {
+    await noteCreated;
+    await withRetry(() =>
+      addNoteToCollectionRecord(vault.token, vault.workspaceId, collectionId, noteId),
+    );
+  });
+}
+
 function insertAt<T>(items: T[], moved: T[], index: number) {
   return [...items.slice(0, index), ...moved, ...items.slice(index)];
 }

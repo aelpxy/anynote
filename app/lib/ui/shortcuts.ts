@@ -43,6 +43,7 @@ export const shortcutGroups: ShortcutGroup[] = [
       { keys: ["Mod", "Click"], label: "Select notes" },
       { keys: ["Shift", "Click"], label: "Select a range" },
       { keys: ["Esc"], label: "Clear selection" },
+      { keys: ["F2"], label: "Rename the focused note or collection" },
     ],
   },
   {

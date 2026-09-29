@@ -21,7 +21,7 @@ export function TextField({ label, hint, className, ...props }: TextFieldProps) 
         id={id}
         aria-describedby={hint ? hintId : undefined}
         className={[
-          "h-9 rounded-md border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-500 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:border-neutral-500 dark:focus:ring-neutral-800",
+          "h-9 rounded-md border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-500 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:border-neutral-500 dark:focus:ring-neutral-800",
           className,
         ]
           .filter(Boolean)

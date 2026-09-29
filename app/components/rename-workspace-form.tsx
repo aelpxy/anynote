@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { FormError } from "~/components/form-error";
+import { SecondaryButton } from "~/components/secondary-button";
 import { TextField } from "~/components/text-field";
 import { getErrorMessage } from "~/lib/account/error-message";
 import type { UnlockedAccount, UnlockedWorkspace } from "~/lib/account/unlocked-account";
@@ -46,13 +47,9 @@ export function RenameWorkspaceForm({ account, workspace }: RenameWorkspaceFormP
             onChange={() => setStatus("idle")}
           />
         </div>
-        <button
-          type="submit"
-          disabled={!canEdit || status === "saving"}
-          className="h-9 rounded-md border border-neutral-300 px-3 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 disabled:opacity-60 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-        >
+        <SecondaryButton type="submit" disabled={!canEdit || status === "saving"}>
           {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : "Rename"}
-        </button>
+        </SecondaryButton>
       </div>
       <FormError message={error} />
     </form>

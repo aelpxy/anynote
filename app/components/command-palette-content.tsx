@@ -199,7 +199,7 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
       shouldFilter={false}
       className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-neutral-600 dark:**:[[cmdk-group-heading]]:text-neutral-400"
     >
-      <div className="flex items-center gap-2 border-b border-neutral-200 px-3 dark:border-neutral-700">
+      <div className="flex items-center gap-2 border-b border-neutral-200 px-3 dark:border-neutral-800">
         <Search className="size-4 shrink-0 text-neutral-600 dark:text-neutral-400" />
         <Command.Input
           value={query}

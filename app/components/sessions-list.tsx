@@ -27,7 +27,7 @@ export function SessionsList() {
   }
 
   return (
-    <ul className="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-700">
+    <ul className="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-800">
       {sessions.slice(0, 5).map((session) => (
         <li key={session.id} className="flex items-center justify-between gap-4 py-2 text-sm">
           <div>

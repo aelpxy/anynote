@@ -3,6 +3,7 @@ export const minSidebarWidth = 192;
 export const maxSidebarWidth = 384;
 
 const sidebarWidthKey = "anynote:sidebar-width";
+const sidebarOpenKey = "anynote:sidebar-open";
 
 export type LayoutState = {
   isSidebarOpen: boolean;
@@ -20,8 +21,13 @@ export function clampSidebarWidth(width: number) {
   return Math.round(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, width)));
 }
 
+function readSidebarOpen() {
+  if (typeof window === "undefined") return true;
+  return localStorage.getItem(sidebarOpenKey) !== "false";
+}
+
 let state: LayoutState = {
-  isSidebarOpen: true,
+  isSidebarOpen: readSidebarOpen(),
   isFocusMode: false,
   sidebarWidth: readSidebarWidth(),
 };
@@ -43,12 +49,14 @@ export function subscribeToLayout(listener: () => void) {
   };
 }
 
-export function setSidebarOpen(isSidebarOpen: boolean) {
+export function setSidebarOpen(isSidebarOpen: boolean, persist = false) {
   update({ isSidebarOpen });
+  if (persist) localStorage.setItem(sidebarOpenKey, String(isSidebarOpen));
 }
 
 export function toggleSidebar() {
-  update({ isSidebarOpen: !state.isSidebarOpen, isFocusMode: false });
+  update({ isFocusMode: false });
+  setSidebarOpen(!state.isSidebarOpen, !window.matchMedia("(max-width: 767px)").matches);
 }
 
 export function toggleFocusMode() {

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { useEffect, useId, useState } from "react";
 
 import { scrollToHeading } from "~/lib/heading-anchor-plugin";
 
@@ -34,6 +35,7 @@ function readHeadings(root: HTMLElement): OutlineHeading[] {
 export function NoteOutline({ editorRef }: NoteOutlineProps) {
   const [headings, setHeadings] = useState<OutlineHeading[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const indicatorId = useId();
 
   useEffect(() => {
     const root = editorRef.current;
@@ -78,16 +80,23 @@ export function NoteOutline({ editorRef }: NoteOutlineProps) {
     >
       <ul className="flex flex-col gap-0.5 border-l border-neutral-200 dark:border-neutral-800">
         {headings.map((heading) => (
-          <li key={heading.id}>
+          <li key={heading.id} className="relative">
+            {heading.id === activeId && (
+              <motion.span
+                layoutId={indicatorId}
+                transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
+                className="absolute inset-y-0 -left-px w-px bg-neutral-900 dark:bg-neutral-100"
+              />
+            )}
             <button
               type="button"
               onClick={() => scrollToHeading(heading.id)}
               style={{ paddingLeft: `${(heading.level - minLevel) * 0.75 + 0.75}rem` }}
               className={[
-                "-ml-px block w-full truncate border-l py-0.5 pr-2 text-left text-xs transition-colors",
+                "block w-full truncate py-0.5 pr-2 text-left text-xs transition-colors",
                 heading.id === activeId
-                  ? "border-neutral-900 text-neutral-900 dark:border-neutral-100 dark:text-neutral-100"
-                  : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100",
+                  ? "text-neutral-900 dark:text-neutral-100"
+                  : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100",
               ].join(" ")}
             >
               {heading.text}

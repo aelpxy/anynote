@@ -1,4 +1,5 @@
 import { FileText, RotateCcw, Trash2 } from "lucide-react";
+import { motion } from "motion/react";
 import { useFetcher } from "react-router";
 
 import type { Note } from "~/lib/vault/types";
@@ -11,7 +12,11 @@ export function TrashItem({ note }: TrashItemProps) {
   const fetcher = useFetcher();
 
   return (
-    <li className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900">
+    <motion.li
+      layout="position"
+      exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="flex items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900">
       <FileText className="size-4 shrink-0" />
       <span className="flex-1 truncate">{note.title}</span>
       <fetcher.Form method="post" className="flex items-center gap-1">
@@ -37,6 +42,6 @@ export function TrashItem({ note }: TrashItemProps) {
           <Trash2 className="size-4" />
         </button>
       </fetcher.Form>
-    </li>
+    </motion.li>
   );
 }

@@ -1,3 +1,5 @@
+import { Check } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useDeferredValue } from "react";
 
 import { toPlainText } from "~/lib/vault/plain-text";
@@ -23,7 +25,19 @@ export function NoteStatus({ markdown, saveState }: NoteStatusProps) {
     <p className="mr-2 flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
       {saveState !== "idle" && (
         <>
-          <span>{saveLabels[saveState]}</span>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={saveState}
+              initial={{ opacity: 0, y: 2 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -2 }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
+              className="flex items-center gap-1"
+            >
+              {saveState === "saved" && <Check aria-hidden className="size-3" />}
+              {saveLabels[saveState]}
+            </motion.span>
+          </AnimatePresence>
           <span aria-hidden className="hidden sm:inline">
             ·
           </span>

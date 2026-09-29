@@ -1,8 +1,10 @@
 import { useState } from "react";
 
+import { DialogFooter } from "~/components/dialog-footer";
 import { FormError } from "~/components/form-error";
 import { Modal } from "~/components/modal";
 import { PrimaryButton } from "~/components/primary-button";
+import { SecondaryButton } from "~/components/secondary-button";
 import { TextField } from "~/components/text-field";
 import { useAccount } from "~/hooks/use-account";
 import { changePassword } from "~/lib/account/account-settings";
@@ -53,7 +55,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
       title="Change password"
       description="Other sessions will be signed out."
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <TextField
           label="Current password"
           name="currentPassword"
@@ -80,9 +82,14 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
           disabled={isPending}
         />
         <FormError message={error} />
-        <PrimaryButton isPending={isPending} pendingLabel="Changing…">
-          Change password
-        </PrimaryButton>
+        <DialogFooter>
+          <SecondaryButton disabled={isPending} onClick={() => onOpenChange(false)}>
+            Cancel
+          </SecondaryButton>
+          <PrimaryButton className="" isPending={isPending} pendingLabel="Changing…">
+            Change password
+          </PrimaryButton>
+        </DialogFooter>
       </form>
     </Modal>
   );

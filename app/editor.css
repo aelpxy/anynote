@@ -1,3 +1,15 @@
+@keyframes task-check {
+  0% {
+    scale: 0.8;
+  }
+  60% {
+    scale: 1.1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
 /* base rules ProseMirror requires; normally shipped as prosemirror-view/style/prosemirror.css */
 .ProseMirror {
   position: relative;
@@ -149,7 +161,7 @@ img.ProseMirror-separator {
 
     &[data-checked="true"] {
       &::before {
-        @apply border-neutral-800 bg-neutral-800 dark:border-neutral-200 dark:bg-neutral-200;
+        @apply border-neutral-800 bg-neutral-800 motion-safe:animate-[task-check_180ms_ease-out] dark:border-neutral-200 dark:bg-neutral-200;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
 
         @variant dark {
@@ -160,6 +172,10 @@ img.ProseMirror-separator {
       & > p {
         @apply text-neutral-500 line-through decoration-neutral-400 dark:decoration-neutral-600;
       }
+    }
+
+    & > p {
+      @apply transition-colors duration-200 motion-reduce:transition-none;
     }
   }
 

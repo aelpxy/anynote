@@ -1,4 +1,5 @@
 import { FileText } from "lucide-react";
+import { motion } from "motion/react";
 import { useRef, useState } from "react";
 
 import { BulkNoteContextMenuItems } from "~/components/bulk-note-context-menu-items";
@@ -105,6 +106,7 @@ export function SidebarNoteLink({
     return (
       <SidebarRenameInput
         icon={FileText}
+        emoji={note.icon}
         label="Note title"
         defaultValue={title}
         onSubmit={(value) => {
@@ -117,7 +119,13 @@ export function SidebarNoteLink({
   }
 
   return (
-    <div ref={rowRef} className="relative" {...dropTargetProps}>
+    <motion.div
+      ref={rowRef}
+      layout="position"
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      className="relative"
+      {...dropTargetProps}
+    >
       <SidebarContextMenu
         label={title}
         menu={
@@ -162,6 +170,11 @@ export function SidebarNoteLink({
               clearNoteSelection();
             }
           }}
+          onKeyDown={(event) => {
+            if (event.key !== "F2") return;
+            event.preventDefault();
+            setIsRenaming(true);
+          }}
           onDoubleClick={(event) => {
             if (event.metaKey || event.ctrlKey || event.shiftKey) return;
             setIsRenaming(true);
@@ -189,6 +202,6 @@ export function SidebarNoteLink({
       {overZone && overZone !== "inside" && (
         <SidebarDropIndicator side={overZone} />
       )}
-    </div>
+    </motion.div>
   );
 }

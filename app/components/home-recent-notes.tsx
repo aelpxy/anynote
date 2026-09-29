@@ -1,9 +1,13 @@
 import { FileText, Star } from "lucide-react";
+import { motion } from "motion/react";
 import { Link } from "react-router";
 
 import { NewNoteButton } from "~/components/new-note-button";
 import { formatRelativeTime } from "~/lib/relative-time";
 import type { Note } from "~/lib/vault/types";
+
+const staggerStepS = 0.025;
+const staggerLimit = 8;
 
 type HomeRecentNotesProps = {
   notes: (Note & { updatedAt: string })[];
@@ -17,8 +21,13 @@ export function HomeRecentNotes({ notes }: HomeRecentNotesProps) {
         <NewNoteButton />
       </div>
       <ul className="mt-6 flex flex-col gap-0.5">
-        {notes.map((note) => (
-          <li key={note.id}>
+        {notes.map((note, index) => (
+          <motion.li
+            key={note.id}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut", delay: Math.min(index, staggerLimit) * staggerStepS }}
+          >
             <Link
               to={`/notes/${note.id}`}
               className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-900"
@@ -41,7 +50,7 @@ export function HomeRecentNotes({ notes }: HomeRecentNotesProps) {
                 Edited {formatRelativeTime(note.updatedAt)}
               </span>
             </Link>
-          </li>
+          </motion.li>
         ))}
       </ul>
     </section>

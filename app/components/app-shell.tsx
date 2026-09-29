@@ -13,6 +13,7 @@ import { useCrossTabLock } from "~/hooks/use-cross-tab-lock";
 import { useHotkey } from "~/hooks/use-hotkey";
 import { useIsMobile } from "~/hooks/use-is-mobile";
 import { useLayout } from "~/hooks/use-layout";
+import { useSidebarPeek } from "~/hooks/use-sidebar-peek";
 import { usePreventFileNavigation } from "~/hooks/use-prevent-file-navigation";
 import { useUnsyncedChangesWarning } from "~/hooks/use-unsynced-changes-warning";
 import { useVaultSync } from "~/hooks/use-vault-sync";
@@ -43,6 +44,7 @@ export function AppShell({
   }, [isMobile, pathname]);
 
   const isDrawerOpen = isMobile && isSidebarVisible;
+  const peek = useSidebarPeek(!isMobile && !layout.isSidebarOpen && !layout.isFocusMode);
 
   useEffect(() => {
     if (!isDrawerOpen) return;
@@ -77,12 +79,22 @@ export function AppShell({
       </a>
       {!layout.isFocusMode && (
         <div
+          onPointerEnter={() => {
+            if (!isMobile && !layout.isSidebarOpen) peek.requestPeek();
+          }}
+          onPointerLeave={peek.cancelPeekRequest}
           className={[
             "absolute top-4 left-4 print:hidden",
-            isMobile ? "z-40" : "z-10",
+            isMobile || peek.isPeeking ? "z-40" : "z-10",
           ].join(" ")}
         >
-          <SidebarToggle isOpen={layout.isSidebarOpen} onToggle={toggleSidebar} />
+          <SidebarToggle
+            isOpen={layout.isSidebarOpen}
+            onToggle={() => {
+              peek.closePeek();
+              toggleSidebar();
+            }}
+          />
         </div>
       )}
       {isMobile ? (
@@ -107,17 +119,41 @@ export function AppShell({
                 transition={{ duration: 0.25, ease: [0.215, 0.61, 0.355, 1] }}
                 className="fixed inset-y-0 left-0 z-30 pr-2"
               >
-                <Sidebar {...sidebarProps} width={288} isDrawer />
+                <Sidebar {...sidebarProps} width={288} isOverlay />
               </motion.div>
             </>
           )}
         </AnimatePresence>
       ) : (
-        <AnimatePresence initial={false}>
-          {isSidebarVisible && (
-            <Sidebar {...sidebarProps} width={layout.sidebarWidth} />
+        <>
+          <AnimatePresence initial={false}>
+            {isSidebarVisible && (
+              <Sidebar {...sidebarProps} width={layout.sidebarWidth} />
+            )}
+          </AnimatePresence>
+          {!layout.isSidebarOpen && !layout.isFocusMode && (
+            <div
+              aria-hidden
+              onPointerEnter={peek.requestPeek}
+              onPointerLeave={peek.cancelPeekRequest}
+              className="fixed inset-y-0 left-0 z-20 w-3 print:hidden"
+            />
           )}
-        </AnimatePresence>
+          <AnimatePresence>
+            {peek.isPeeking && (
+              <motion.div
+                ref={peek.peekRef}
+                initial={{ x: "-100%", opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: "-100%", opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.215, 0.61, 0.355, 1] }}
+                className="fixed inset-y-0 left-0 z-30 print:hidden"
+              >
+                <Sidebar {...sidebarProps} width={layout.sidebarWidth} isOverlay />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
       )}
       <main
         id="main"

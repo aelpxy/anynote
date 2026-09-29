@@ -1,4 +1,5 @@
-import { Outlet } from "react-router";
+import { motion } from "motion/react";
+import { Outlet, useLocation } from "react-router";
 
 import type { Route } from "./+types/sidebar-layout";
 import { AppShell } from "~/components/app-shell";
@@ -15,9 +16,18 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 }
 
 export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
+  const { pathname } = useLocation();
+
   return (
     <AppShell {...loaderData}>
-      <Outlet />
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+      >
+        <Outlet />
+      </motion.div>
     </AppShell>
   );
 }

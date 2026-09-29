@@ -1,6 +1,7 @@
 import { Collapsible } from "@base-ui/react/collapsible";
 import { ChevronRight } from "lucide-react";
 
+import { useExpanded } from "~/hooks/use-expanded";
 import type { SidebarDropTargetProps } from "~/hooks/use-sidebar-drop-target";
 
 type SidebarSectionProps = {
@@ -18,9 +19,12 @@ export function SidebarSection({
   dropTargetProps,
   children,
 }: SidebarSectionProps) {
+  const [isOpen, setIsOpen] = useExpanded(`section:${title}`, true);
+
   return (
     <Collapsible.Root
-      defaultOpen
+      open={isOpen}
+      onOpenChange={setIsOpen}
       {...dropTargetProps}
       className={[
         "rounded-md transition-colors",

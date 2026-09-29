@@ -1,6 +1,8 @@
 import { Collapsible } from "@base-ui/react/collapsible";
-import { ChevronRight, Folder } from "lucide-react";
+import { ChevronRight, Folder, Plus } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { CollectionContextMenuItems } from "~/components/collection-context-menu-items";
 import { SidebarContextMenu } from "~/components/sidebar-context-menu";
@@ -9,6 +11,7 @@ import { SidebarNoteLink } from "~/components/sidebar-note-link";
 import { SidebarRenameInput } from "~/components/sidebar-rename-input";
 import { useArrangeActions } from "~/hooks/use-arrange-actions";
 import { useCollectionActions } from "~/hooks/use-collection-actions";
+import { useExpanded } from "~/hooks/use-expanded";
 import { useSidebarDropTarget } from "~/hooks/use-sidebar-drop-target";
 import { getRowZone, setSidebarDrag } from "~/lib/ui/sidebar-drag";
 import { countCollectionNotes, flattenCollections } from "~/lib/vault/queries";
@@ -22,10 +25,11 @@ type SidebarCollectionProps = {
 };
 
 export function SidebarCollection({ collection, siblings }: SidebarCollectionProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useExpanded(`collection:${collection.id}`, false);
   const [isRenaming, setIsRenaming] = useState(false);
   const actions = useCollectionActions(collection.id, collection.parentId);
   const arrangeActions = useArrangeActions();
+  const createFetcher = useFetcher();
   const rowRef = useRef<HTMLDivElement>(null);
   const name = actions.pendingName ?? collection.name;
   const noteCount = countCollectionNotes(collection);
@@ -86,6 +90,7 @@ export function SidebarCollection({ collection, siblings }: SidebarCollectionPro
     <Collapsible.Root
       open={isOpen}
       onOpenChange={setIsOpen}
+      render={<motion.div layout="position" transition={{ duration: 0.15, ease: "easeOut" }} />}
       {...dropTargetProps}
     >
       <div ref={rowRef} className="relative">
@@ -104,6 +109,22 @@ export function SidebarCollection({ collection, siblings }: SidebarCollectionPro
           <SidebarContextMenu
             label={name}
             buttonPosition="before-chevron"
+            extraAction={
+              <button
+                type="button"
+                aria-label={`New note in ${name}`}
+                onClick={() => {
+                  setIsOpen(true);
+                  createFetcher.submit(
+                    { collectionId: collection.id },
+                    { method: "post", action: "/notes" },
+                  );
+                }}
+                className="absolute top-1/2 right-12 flex size-6 -translate-y-1/2 items-center justify-center rounded text-neutral-600 opacity-0 transition-[opacity,background-color] group-hover/row:opacity-100 hover:bg-neutral-300/70 hover:text-neutral-900 focus-visible:opacity-100 pointer-coarse:opacity-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
+              >
+                <Plus className="size-4" />
+              </button>
+            }
             menu={
               <CollectionContextMenuItems
                 collection={collection}
@@ -149,22 +170,35 @@ export function SidebarCollection({ collection, siblings }: SidebarCollectionPro
                 });
               }}
               onDragEnd={() => setSidebarDrag(null)}
-              // both clicks toggle, which cancels out, so the collection stays as it was
-              onDoubleClick={() => setIsRenaming(true)}
+              onKeyDown={(event) => {
+                if (event.key !== "F2") return;
+                event.preventDefault();
+                setIsRenaming(true);
+              }}
               className={[
-                "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors pointer-coarse:py-2",
+                "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-[color,background-color,scale] duration-150 active:scale-[0.985] motion-reduce:active:scale-100 pointer-coarse:py-2",
                 isOverInside
                   ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
                   : "text-neutral-700 hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100",
               ].join(" ")}
             >
               <Folder className="size-4 shrink-0" />
-              <span className="flex-1 truncate text-left group-hover/row:pr-5 pointer-coarse:pr-5">
+              <span className="flex-1 truncate text-left group-hover/row:pr-12 pointer-coarse:pr-12">
                 {name}
               </span>
               {noteCount > 0 && (
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums group-hover/row:invisible pointer-coarse:invisible">
-                  {noteCount}
+                <span className="relative inline-flex overflow-hidden text-xs text-neutral-500 tabular-nums group-hover/row:invisible pointer-coarse:invisible dark:text-neutral-400">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={noteCount}
+                      initial={{ y: -8, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: 8, opacity: 0 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                    >
+                      {noteCount}
+                    </motion.span>
+                  </AnimatePresence>
                 </span>
               )}
               <ChevronRight className="size-3.5 shrink-0 transition-[rotate] duration-150 ease-out group-data-panel-open:rotate-90 motion-reduce:transition-none" />

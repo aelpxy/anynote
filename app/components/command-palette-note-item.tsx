@@ -19,7 +19,7 @@ export function CommandPaletteNoteItem({
     <Command.Item
       value={`note:${result.id}`}
       onSelect={onSelect}
-      className="flex cursor-default items-start gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 select-none data-[selected=true]:bg-neutral-100 data-[selected=true]:text-neutral-900 dark:text-neutral-300 dark:data-[selected=true]:bg-neutral-700 dark:data-[selected=true]:text-neutral-100"
+      className="flex cursor-default items-start gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 select-none data-[selected=true]:bg-neutral-100 data-[selected=true]:text-neutral-900 dark:text-neutral-300 dark:data-[selected=true]:bg-neutral-800 dark:data-[selected=true]:text-neutral-100"
     >
       <FileText className="mt-0.5 size-4 shrink-0" />
       <div className="min-w-0 flex-1">

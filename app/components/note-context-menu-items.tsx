@@ -17,6 +17,7 @@ import { MenuItem } from "~/components/menu-item";
 import { MenuSeparator } from "~/components/menu-separator";
 import { MenuSubmenu } from "~/components/menu-submenu";
 import type { NoteActions } from "~/hooks/use-note-actions";
+import { showToast } from "~/lib/ui/toast-store";
 import { flattenCollections } from "~/lib/vault/queries";
 import type { Note } from "~/lib/vault/types";
 import type { clientLoader } from "~/routes/sidebar-layout";
@@ -47,7 +48,7 @@ export function NoteContextMenuItems({
 
   function copyLink() {
     const url = new URL(`/notes/${note.id}`, window.location.origin);
-    void navigator.clipboard.writeText(url.href);
+    void navigator.clipboard.writeText(url.href).then(() => showToast({ message: "Link copied" }));
   }
 
   return (

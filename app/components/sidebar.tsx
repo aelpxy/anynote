@@ -11,6 +11,7 @@ import { SidebarResizeHandle } from "~/components/sidebar-resize-handle";
 import { SidebarSearchButton } from "~/components/sidebar-search-button";
 import { SidebarSection } from "~/components/sidebar-section";
 import { WorkspaceMenu } from "~/components/workspace-menu";
+import { useRevealOpenNote } from "~/hooks/use-reveal-open-note";
 import { useSidebarDropTargets } from "~/hooks/use-sidebar-drop-targets";
 import { clearNoteSelection } from "~/lib/ui/note-selection";
 import type { Collection, Note } from "~/lib/vault/types";
@@ -20,7 +21,7 @@ type SidebarProps = {
   documents: Note[];
   collections: Collection[];
   width: number;
-  isDrawer?: boolean;
+  isOverlay?: boolean;
   onSearch: () => void;
 };
 
@@ -29,11 +30,12 @@ export function Sidebar({
   documents,
   collections,
   width,
-  isDrawer = false,
+  isOverlay = false,
   onSearch,
 }: SidebarProps) {
   const dropTargets = useSidebarDropTargets();
   const [isResizing, setIsResizing] = useState(false);
+  useRevealOpenNote(collections);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -45,9 +47,9 @@ export function Sidebar({
 
   return (
     <motion.aside
-      initial={isDrawer ? false : { width: 0 }}
+      initial={isOverlay ? false : { width: 0 }}
       animate={{ width }}
-      exit={isDrawer ? undefined : { width: 0 }}
+      exit={isOverlay ? undefined : { width: 0 }}
       transition={
         isResizing
           ? { duration: 0 }
@@ -55,17 +57,26 @@ export function Sidebar({
       }
       className="relative h-full shrink-0 overflow-hidden print:hidden"
     >
-      {!isDrawer && (
+      {!isOverlay && (
         <SidebarResizeHandle width={width} onResizingChange={setIsResizing} />
       )}
       <div className="h-full py-2 pl-2" style={{ width }}>
-        <div className="flex h-full flex-col rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
+        <div
+          className={[
+            "flex h-full flex-col rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900",
+            isOverlay ? "shadow-xl shadow-neutral-900/10 dark:shadow-black/40" : "",
+          ].join(" ")}
+        >
           <div className="h-12 shrink-0" />
           <div className="flex flex-col gap-3 px-1.5">
             <WorkspaceMenu />
             <SidebarSearchButton onClick={onSearch} />
           </div>
-          <nav className="mt-4 flex flex-1 flex-col gap-4 overflow-y-auto px-1.5 pb-2">
+          <motion.nav
+            aria-label="Notes"
+            layoutScroll
+            className="mt-4 flex flex-1 flex-col gap-4 overflow-y-auto px-1.5 pb-2"
+          >
             <SidebarSection
               title="Favorites"
               isDropTarget={dropTargets.favorites.isOver}
@@ -126,7 +137,7 @@ export function Sidebar({
                 />
               ))}
             </SidebarSection>
-          </nav>
+          </motion.nav>
           <div className="border-t border-neutral-200 p-1.5 dark:border-neutral-800">
             <div
               {...dropTargets.trash.dropTargetProps}

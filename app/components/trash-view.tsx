@@ -1,3 +1,5 @@
+import { AnimatePresence } from "motion/react";
+
 import { EmptyTrashButton } from "~/components/empty-trash-button";
 import { PageHeader } from "~/components/page-header";
 import { TrashItem } from "~/components/trash-item";
@@ -23,9 +25,11 @@ export function TrashView({ notes }: TrashViewProps) {
           </p>
         ) : (
           <ul className="mt-6 flex flex-col gap-0.5">
-            {notes.map((note) => (
-              <TrashItem key={note.id} note={note} />
-            ))}
+            <AnimatePresence initial={false}>
+              {notes.map((note) => (
+                <TrashItem key={note.id} note={note} />
+              ))}
+            </AnimatePresence>
           </ul>
         )}
       </section>
