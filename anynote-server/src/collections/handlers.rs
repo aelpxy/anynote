@@ -1,36 +1,19 @@
 use axum::{extract::State, http::StatusCode};
-use sqlx::PgConnection;
 use uuid::Uuid;
 
 use crate::{
     auth::session::AuthUser,
     changes::{self, Entity, Operation},
-    collections::model::{Collection, CreateCollection, Order, UpdateCollection},
+    collections::{
+        model::{Collection, CreateCollection, Order, UpdateCollection},
+        repo::{self, CollectionChanges},
+    },
     crypto::envelope,
-    error::AppError,
+    error::{AppError, is_foreign_key_violation, is_unique_violation},
     http::extract::{Json, Path},
     state::AppState,
     workspaces::access::{Access, authorize},
 };
-
-pub async fn subtree_ids(
-    db: &mut PgConnection,
-    workspace_id: Uuid,
-    collection_id: Uuid,
-) -> Result<Vec<Uuid>, AppError> {
-    Ok(sqlx::query_scalar!(
-        r#"with recursive subtree as (
-             select id from collections where workspace_id = $1 and id = $2
-             union all
-             select c.id from collections c join subtree s on c.parent_id = s.id
-           )
-           select id as "id!" from subtree"#,
-        workspace_id,
-        collection_id,
-    )
-    .fetch_all(db)
-    .await?)
-}
 
 const MAX_ORDER_LEN: usize = 10_000;
 
@@ -41,29 +24,21 @@ fn validate_order(order: &Order) -> Result<(), AppError> {
     Ok(())
 }
 
+fn parent_not_found(error: sqlx::Error) -> AppError {
+    if is_foreign_key_violation(&error) {
+        AppError::bad_request("parent collection not found")
+    } else {
+        error.into()
+    }
+}
+
 pub async fn list(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(workspace_id): Path<Uuid>,
 ) -> Result<Json<Vec<Collection>>, AppError> {
     authorize(&state.db, workspace_id, auth.user_id, Access::Read).await?;
-
-    let collections = sqlx::query_as!(
-        Collection,
-        r#"select c.id, c.parent_id, c.encrypted_name, c.position, c.created_at, c.updated_at,
-             coalesce(array_agg(cn.note_id order by cn.position, cn.note_id)
-               filter (where cn.note_id is not null), '{}') as "note_ids!"
-           from collections c
-           left join collection_notes cn on cn.collection_id = c.id
-           where c.workspace_id = $1
-           group by c.id
-           order by c.position, c.created_at"#,
-        workspace_id,
-    )
-    .fetch_all(&state.db)
-    .await?;
-
-    Ok(Json(collections))
+    Ok(Json(repo::list(&state.db, workspace_id).await?))
 }
 
 pub async fn create(
@@ -76,25 +51,21 @@ pub async fn create(
     envelope::validate("encryptedName", &request.encrypted_name)?;
 
     let mut tx = state.db.begin().await?;
-    sqlx::query!(
-        "insert into collections (id, workspace_id, parent_id, encrypted_name, position)
-         values ($1, $2, $3, $4, $5)",
+    repo::insert(
+        &mut *tx,
         request.id,
         workspace_id,
         request.parent_id,
-        request.encrypted_name,
+        &request.encrypted_name,
         request.position,
     )
-    .execute(&mut *tx)
     .await
-    .map_err(|error| match &error {
-        sqlx::Error::Database(db_error) if db_error.is_unique_violation() => {
+    .map_err(|error| {
+        if is_unique_violation(&error) {
             AppError::Conflict("collection already exists".into())
+        } else {
+            parent_not_found(error)
         }
-        sqlx::Error::Database(db_error) if db_error.is_foreign_key_violation() => {
-            AppError::bad_request("parent collection not found")
-        }
-        _ => error.into(),
     })?;
     changes::record(
         &mut tx,
@@ -122,7 +93,7 @@ pub async fn update(
 
     let mut tx = state.db.begin().await?;
     if let Some(Some(parent_id)) = request.parent_id {
-        let subtree = subtree_ids(&mut tx, workspace_id, collection_id).await?;
+        let subtree = repo::subtree_ids(&mut tx, workspace_id, collection_id).await?;
         if subtree.contains(&parent_id) {
             return Err(AppError::bad_request(
                 "a collection can't be moved into itself",
@@ -130,28 +101,15 @@ pub async fn update(
         }
     }
 
-    let updated = sqlx::query!(
-        "update collections set
-           encrypted_name = coalesce($3, encrypted_name),
-           parent_id = case when $4 then $5 else parent_id end,
-           position = coalesce($6, position)
-         where workspace_id = $1 and id = $2",
-        workspace_id,
-        collection_id,
-        request.encrypted_name,
-        request.parent_id.is_some(),
-        request.parent_id.flatten(),
-        request.position,
-    )
-    .execute(&mut *tx)
-    .await
-    .map_err(|error| match &error {
-        sqlx::Error::Database(db_error) if db_error.is_foreign_key_violation() => {
-            AppError::bad_request("parent collection not found")
-        }
-        _ => error.into(),
-    })?;
-    if updated.rows_affected() == 0 {
+    let changes = CollectionChanges {
+        encrypted_name: request.encrypted_name.as_deref(),
+        parent_id: request.parent_id,
+        position: request.position,
+    };
+    let updated = repo::update(&mut *tx, workspace_id, collection_id, changes)
+        .await
+        .map_err(parent_not_found)?;
+    if !updated {
         return Err(AppError::NotFound);
     }
     changes::record(
@@ -175,17 +133,11 @@ pub async fn delete(
     authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
 
     let mut tx = state.db.begin().await?;
-    let removed = subtree_ids(&mut tx, workspace_id, collection_id).await?;
+    let removed = repo::subtree_ids(&mut tx, workspace_id, collection_id).await?;
     if removed.is_empty() {
         return Err(AppError::NotFound);
     }
-    sqlx::query!(
-        "delete from collections where workspace_id = $1 and id = $2",
-        workspace_id,
-        collection_id,
-    )
-    .execute(&mut *tx)
-    .await?;
+    repo::delete(&mut *tx, workspace_id, collection_id).await?;
     for id in removed {
         changes::record(
             &mut tx,
@@ -209,23 +161,15 @@ pub async fn add_note(
     authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
 
     let mut tx = state.db.begin().await?;
-    sqlx::query!(
-        "insert into collection_notes (workspace_id, collection_id, note_id, position)
-         values ($1, $2, $3,
-           (select coalesce(max(position) + 1, 0) from collection_notes where collection_id = $2))
-         on conflict (collection_id, note_id) do nothing",
-        workspace_id,
-        collection_id,
-        note_id,
-    )
-    .execute(&mut *tx)
-    .await
-    .map_err(|error| match &error {
-        sqlx::Error::Database(db_error) if db_error.is_foreign_key_violation() => {
-            AppError::NotFound
-        }
-        _ => error.into(),
-    })?;
+    repo::add_note(&mut *tx, workspace_id, collection_id, note_id)
+        .await
+        .map_err(|error| {
+            if is_foreign_key_violation(&error) {
+                AppError::NotFound
+            } else {
+                error.into()
+            }
+        })?;
     changes::record(
         &mut tx,
         workspace_id,
@@ -247,14 +191,7 @@ pub async fn remove_note(
     authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
 
     let mut tx = state.db.begin().await?;
-    sqlx::query!(
-        "delete from collection_notes where workspace_id = $1 and collection_id = $2 and note_id = $3",
-        workspace_id,
-        collection_id,
-        note_id,
-    )
-    .execute(&mut *tx)
-    .await?;
+    repo::remove_note(&mut *tx, workspace_id, collection_id, note_id).await?;
     changes::record(
         &mut tx,
         workspace_id,
@@ -278,17 +215,7 @@ pub async fn reorder(
     validate_order(&request)?;
 
     let mut tx = state.db.begin().await?;
-    let updated = sqlx::query_scalar!(
-        "update collections c set position = (o.position - 1)::integer
-         from unnest($2::uuid[]) with ordinality as o(id, position)
-         where c.workspace_id = $1 and c.id = o.id
-         returning c.id",
-        workspace_id,
-        &request.ids,
-    )
-    .fetch_all(&mut *tx)
-    .await?;
-    for collection_id in updated {
+    for collection_id in repo::reorder(&mut *tx, workspace_id, &request.ids).await? {
         changes::record(
             &mut tx,
             workspace_id,
@@ -313,16 +240,7 @@ pub async fn reorder_notes(
     validate_order(&request)?;
 
     let mut tx = state.db.begin().await?;
-    sqlx::query!(
-        "update collection_notes cn set position = (o.position - 1)::integer
-         from unnest($3::uuid[]) with ordinality as o(note_id, position)
-         where cn.workspace_id = $1 and cn.collection_id = $2 and cn.note_id = o.note_id",
-        workspace_id,
-        collection_id,
-        &request.ids,
-    )
-    .execute(&mut *tx)
-    .await?;
+    repo::reorder_notes(&mut *tx, workspace_id, collection_id, &request.ids).await?;
     changes::record(
         &mut tx,
         workspace_id,

@@ -8,7 +8,10 @@ use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
 use crate::{
-    attachments::model::{SweepRequest, SweepResponse},
+    attachments::{
+        model::{SweepRequest, SweepResponse},
+        repo,
+    },
     auth::session::AuthUser,
     changes::{self, Entity, Operation},
     error::AppError,
@@ -25,13 +28,7 @@ pub async fn upload(
 ) -> Result<StatusCode, AppError> {
     authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
 
-    let exists = sqlx::query_scalar!(
-        r#"select exists(select 1 from attachments where id = $1) as "exists!""#,
-        attachment_id,
-    )
-    .fetch_one(&state.db)
-    .await?;
-    if exists {
+    if repo::exists(&state.db, attachment_id).await? {
         return Err(AppError::Conflict("attachment already exists".into()));
     }
 
@@ -47,14 +44,7 @@ pub async fn upload(
 
     let saved = async {
         let mut tx = state.db.begin().await?;
-        sqlx::query!(
-            "insert into attachments (id, workspace_id, size) values ($1, $2, $3)",
-            attachment_id,
-            workspace_id,
-            size as i64,
-        )
-        .execute(&mut *tx)
-        .await?;
+        repo::insert(&mut *tx, attachment_id, workspace_id, size as i64).await?;
         changes::record(
             &mut tx,
             workspace_id,
@@ -83,14 +73,9 @@ pub async fn download(
 ) -> Result<Response, AppError> {
     authorize(&state.db, workspace_id, auth.user_id, Access::Read).await?;
 
-    let size = sqlx::query_scalar!(
-        "select size from attachments where workspace_id = $1 and id = $2",
-        workspace_id,
-        attachment_id,
-    )
-    .fetch_optional(&state.db)
-    .await?
-    .ok_or(AppError::NotFound)?;
+    let size = repo::size(&state.db, workspace_id, attachment_id)
+        .await?
+        .ok_or(AppError::NotFound)?;
     let file = state.storage.open(workspace_id, attachment_id).await?;
 
     Ok((
@@ -117,14 +102,7 @@ pub async fn delete(
     authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
 
     let mut tx = state.db.begin().await?;
-    let deleted = sqlx::query!(
-        "delete from attachments where workspace_id = $1 and id = $2",
-        workspace_id,
-        attachment_id,
-    )
-    .execute(&mut *tx)
-    .await?;
-    if deleted.rows_affected() == 0 {
+    if !repo::delete(&mut *tx, workspace_id, attachment_id).await? {
         return Err(AppError::NotFound);
     }
     changes::record(
@@ -151,16 +129,7 @@ pub async fn sweep(
     authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
 
     let mut tx = state.db.begin().await?;
-    // a grace period keeps uploads that aren't saved into a note yet
-    let removed = sqlx::query_scalar!(
-        "delete from attachments
-         where workspace_id = $1 and id <> all($2) and created_at < now() - interval '1 day'
-         returning id",
-        workspace_id,
-        &request.keep,
-    )
-    .fetch_all(&mut *tx)
-    .await?;
+    let removed = repo::delete_unreferenced(&mut *tx, workspace_id, &request.keep).await?;
     for &attachment_id in &removed {
         changes::record(
             &mut tx,

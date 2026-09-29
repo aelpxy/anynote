@@ -1,0 +1,23 @@
+mod account;
+mod app;
+mod attachments;
+mod auth;
+mod changes;
+mod cli;
+mod collections;
+mod config;
+mod crypto;
+mod error;
+mod http;
+mod jobs;
+mod link_preview;
+mod notes;
+mod realtime;
+mod server;
+mod sessions;
+mod state;
+mod storage;
+mod web;
+mod workspaces;
+
+pub use cli::run;

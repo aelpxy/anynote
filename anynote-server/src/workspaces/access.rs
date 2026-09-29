@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::error::AppError;
+use crate::{error::AppError, workspaces::repo};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Access {
@@ -17,14 +17,9 @@ pub async fn authorize(
     user_id: Uuid,
     access: Access,
 ) -> Result<(), AppError> {
-    let role = sqlx::query_scalar!(
-        "select role from workspace_members where workspace_id = $1 and user_id = $2",
-        workspace_id,
-        user_id,
-    )
-    .fetch_optional(db)
-    .await?
-    .ok_or(AppError::NotFound)?;
+    let role = repo::member_role(db, workspace_id, user_id)
+        .await?
+        .ok_or(AppError::NotFound)?;
 
     let allowed = match access {
         Access::Read => true,

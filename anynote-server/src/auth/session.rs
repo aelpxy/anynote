@@ -3,10 +3,10 @@ use chrono::{DateTime, Duration, Utc};
 use rand::{RngCore, rngs::OsRng};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use sqlx::PgConnection;
+use sqlx::PgExecutor;
 use uuid::Uuid;
 
-use crate::{error::AppError, http::b64, state::AppState};
+use crate::{error::AppError, http::b64, sessions::repo as sessions, state::AppState};
 
 const SESSION_TTL_DAYS: i64 = 30;
 
@@ -40,19 +40,14 @@ fn hash_token(token: &[u8]) -> Vec<u8> {
     Sha256::digest(token).to_vec()
 }
 
-pub async fn create_session(db: &mut PgConnection, user_id: Uuid) -> Result<NewSession, AppError> {
+pub async fn create_session(
+    db: impl PgExecutor<'_>,
+    user_id: Uuid,
+) -> Result<NewSession, AppError> {
     let mut token = [0u8; 32];
     OsRng.fill_bytes(&mut token);
     let expires_at = Utc::now() + Duration::days(SESSION_TTL_DAYS);
-
-    sqlx::query!(
-        "insert into sessions (user_id, token_hash, expires_at) values ($1, $2, $3)",
-        user_id,
-        hash_token(&token),
-        expires_at,
-    )
-    .execute(db)
-    .await?;
+    sessions::insert(db, user_id, &hash_token(&token), expires_at).await?;
 
     Ok(NewSession {
         token: b64::encode(token),
@@ -75,15 +70,9 @@ impl FromRequestParts<AppState> for AuthUser {
             .and_then(|value| b64::decode(value).ok())
             .ok_or(AppError::Unauthorized)?;
 
-        let session = sqlx::query!(
-            "update sessions set last_used_at = now()
-             where token_hash = $1 and expires_at > now()
-             returning id, user_id, created_at",
-            hash_token(&token),
-        )
-        .fetch_optional(&state.db)
-        .await?
-        .ok_or(AppError::Unauthorized)?;
+        let session = sessions::touch(&state.db, &hash_token(&token))
+            .await?
+            .ok_or(AppError::Unauthorized)?;
 
         Ok(Self {
             user_id: session.user_id,

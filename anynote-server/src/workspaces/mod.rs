@@ -1,6 +1,7 @@
 pub mod access;
 mod handlers;
 pub mod model;
+pub mod repo;
 
 use axum::{
     Router,

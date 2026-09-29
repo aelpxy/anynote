@@ -3,18 +3,16 @@ use std::time::Duration;
 use sqlx::PgPool;
 
 use crate::{
+    auth::repo as auth,
     changes::{self, Entity, Operation},
     error::AppError,
+    notes::repo as notes,
+    sessions::repo as sessions,
 };
 
 async fn empty_old_trash(db: &PgPool) -> Result<u64, AppError> {
     let mut tx = db.begin().await?;
-    let removed = sqlx::query!(
-        "delete from notes where trashed_at < now() - interval '30 days'
-         returning id, workspace_id"
-    )
-    .fetch_all(&mut *tx)
-    .await?;
+    let removed = notes::delete_expired_trash(&mut *tx).await?;
     for note in &removed {
         changes::record(
             &mut tx,
@@ -30,13 +28,9 @@ async fn empty_old_trash(db: &PgPool) -> Result<u64, AppError> {
 }
 
 async fn clear_expired_sessions(db: &PgPool) -> Result<u64, AppError> {
-    let sessions = sqlx::query!("delete from sessions where expires_at < now()")
-        .execute(db)
-        .await?;
-    let attempts = sqlx::query!("delete from login_attempts where expires_at < now()")
-        .execute(db)
-        .await?;
-    Ok(sessions.rows_affected() + attempts.rows_affected())
+    let sessions = sessions::delete_expired(db).await?;
+    let attempts = auth::delete_expired_login_attempts(db).await?;
+    Ok(sessions + attempts)
 }
 
 async fn run_once(db: &PgPool) {

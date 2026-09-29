@@ -1,9 +1,8 @@
 mod handlers;
 pub mod model;
+pub mod repo;
 
 use axum::{Router, routing::get};
-
-pub use handlers::load_account;
 
 use crate::state::AppState;
 

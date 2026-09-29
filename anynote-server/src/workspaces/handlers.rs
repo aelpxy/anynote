@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::session::AuthUser,
-    changes,
+    changes::{self, Entity, Operation},
     crypto::envelope,
     error::AppError,
     http::extract::{Json, Path},
@@ -11,6 +11,7 @@ use crate::{
     workspaces::{
         access::{Access, authorize},
         model::{CreateWorkspace, RenameWorkspace},
+        repo,
     },
 };
 
@@ -22,34 +23,21 @@ pub async fn create(
     envelope::validate("encryptedName", &request.encrypted_name)?;
 
     let mut tx = state.db.begin().await?;
-    sqlx::query!(
-        "insert into workspaces (id, encrypted_name) values ($1, $2)",
+    repo::insert_with_owner(
+        &mut tx,
         request.id,
-        request.encrypted_name,
-    )
-    .execute(&mut *tx)
-    .await
-    .map_err(|error| match &error {
-        sqlx::Error::Database(db_error) if db_error.is_unique_violation() => {
-            AppError::Conflict("workspace already exists".into())
-        }
-        _ => error.into(),
-    })?;
-    sqlx::query!(
-        "insert into workspace_members (workspace_id, user_id, role, encrypted_workspace_key)
-         values ($1, $2, 'owner', $3)",
-        request.id,
+        &request.encrypted_name,
         auth.user_id,
-        request.encrypted_workspace_key,
+        &request.encrypted_workspace_key,
     )
-    .execute(&mut *tx)
-    .await?;
+    .await
+    .map_err(AppError::conflict_on_unique("workspace already exists"))?;
     changes::record(
         &mut tx,
         request.id,
-        changes::Entity::Workspace,
+        Entity::Workspace,
         request.id,
-        changes::Operation::Upsert,
+        Operation::Upsert,
     )
     .await?;
     tx.commit().await?;
@@ -67,19 +55,13 @@ pub async fn rename(
     envelope::validate("encryptedName", &request.encrypted_name)?;
 
     let mut tx = state.db.begin().await?;
-    sqlx::query!(
-        "update workspaces set encrypted_name = $2 where id = $1",
-        workspace_id,
-        request.encrypted_name,
-    )
-    .execute(&mut *tx)
-    .await?;
+    repo::rename(&mut *tx, workspace_id, &request.encrypted_name).await?;
     changes::record(
         &mut tx,
         workspace_id,
-        changes::Entity::Workspace,
+        Entity::Workspace,
         workspace_id,
-        changes::Operation::Upsert,
+        Operation::Upsert,
     )
     .await?;
     tx.commit().await?;
@@ -94,21 +76,13 @@ pub async fn delete(
 ) -> Result<StatusCode, AppError> {
     authorize(&state.db, workspace_id, auth.user_id, Access::Own).await?;
 
-    let workspace_count = sqlx::query_scalar!(
-        r#"select count(*) as "count!" from workspace_members where user_id = $1"#,
-        auth.user_id,
-    )
-    .fetch_one(&state.db)
-    .await?;
-    if workspace_count <= 1 {
+    if repo::membership_count(&state.db, auth.user_id).await? <= 1 {
         return Err(AppError::bad_request(
             "you can't delete your only workspace",
         ));
     }
 
-    sqlx::query!("delete from workspaces where id = $1", workspace_id)
-        .execute(&state.db)
-        .await?;
+    repo::delete(&state.db, workspace_id).await?;
     state.storage.delete_workspace(workspace_id).await?;
 
     Ok(StatusCode::NO_CONTENT)

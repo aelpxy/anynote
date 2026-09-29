@@ -2,6 +2,7 @@ mod handlers;
 pub mod key_stretching;
 pub mod model;
 pub mod opaque;
+pub mod repo;
 pub mod session;
 pub mod username;
 

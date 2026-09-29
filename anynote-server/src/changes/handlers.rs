@@ -3,7 +3,10 @@ use uuid::Uuid;
 
 use crate::{
     auth::session::AuthUser,
-    changes::model::{Change, ChangesCursor, ChangesQuery, ChangesResponse},
+    changes::{
+        model::{ChangesCursor, ChangesQuery, ChangesResponse},
+        repo,
+    },
     error::AppError,
     http::extract::{Json, Path, Query},
     state::AppState,
@@ -19,18 +22,7 @@ pub async fn list(
     authorize(&state.db, workspace_id, auth.user_id, Access::Read).await?;
     let limit = query.limit.unwrap_or(500).clamp(1, 1000);
 
-    let mut changes = sqlx::query_as!(
-        Change,
-        "select id, entity, entity_id, operation, created_at from changes
-         where workspace_id = $1 and id > $2
-         order by id
-         limit $3",
-        workspace_id,
-        query.after,
-        limit + 1,
-    )
-    .fetch_all(&state.db)
-    .await?;
+    let mut changes = repo::list_after(&state.db, workspace_id, query.after, limit + 1).await?;
 
     let has_more = changes.len() as i64 > limit;
     changes.truncate(limit as usize);
@@ -50,12 +42,7 @@ pub async fn cursor(
 ) -> Result<Json<ChangesCursor>, AppError> {
     authorize(&state.db, workspace_id, auth.user_id, Access::Read).await?;
 
-    let cursor = sqlx::query_scalar!(
-        r#"select coalesce(max(id), 0) as "cursor!" from changes where workspace_id = $1"#,
-        workspace_id,
-    )
-    .fetch_one(&state.db)
-    .await?;
+    let cursor = repo::latest_cursor(&state.db, workspace_id).await?;
 
     Ok(Json(ChangesCursor { cursor }))
 }

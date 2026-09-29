@@ -39,6 +39,24 @@ impl AppError {
     pub fn bad_request(message: impl Into<String>) -> Self {
         Self::BadRequest(message.into())
     }
+
+    pub fn conflict_on_unique(message: &'static str) -> impl FnOnce(sqlx::Error) -> Self {
+        move |error| {
+            if is_unique_violation(&error) {
+                Self::Conflict(message.into())
+            } else {
+                error.into()
+            }
+        }
+    }
+}
+
+pub fn is_unique_violation(error: &sqlx::Error) -> bool {
+    matches!(error, sqlx::Error::Database(db_error) if db_error.is_unique_violation())
+}
+
+pub fn is_foreign_key_violation(error: &sqlx::Error) -> bool {
+    matches!(error, sqlx::Error::Database(db_error) if db_error.is_foreign_key_violation())
 }
 
 impl IntoResponse for AppError {

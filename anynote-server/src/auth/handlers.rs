@@ -6,7 +6,7 @@ use opaque_ke::{
 use rand::rngs::OsRng;
 
 use crate::{
-    account::load_account,
+    account::repo::load_account,
     auth::{
         model::{
             LoginFinishRequest, LoginFinishResponse, LoginStartRequest, LoginStartResponse,
@@ -14,25 +14,20 @@ use crate::{
             RegisterFinishResponse, RegisterStartRequest, RegisterStartResponse,
         },
         opaque::Suite,
+        repo,
         session::{AuthUser, create_session},
         username::normalize_username,
     },
+    changes::{self, Entity, Operation},
     crypto::envelope,
     error::AppError,
     http::extract::Json,
+    sessions::repo as sessions,
     state::AppState,
+    workspaces::repo as workspaces,
 };
 
 pub const LOGIN_ATTEMPT_TTL_SECONDS: f64 = 120.0;
-
-pub async fn is_username_taken(state: &AppState, username: &str) -> Result<bool, AppError> {
-    Ok(sqlx::query_scalar!(
-        r#"select exists(select 1 from users where username = $1) as "taken!""#,
-        username,
-    )
-    .fetch_one(&state.db)
-    .await?)
-}
 
 pub async fn register_start(
     State(state): State<AppState>,
@@ -40,7 +35,7 @@ pub async fn register_start(
 ) -> Result<Json<RegisterStartResponse>, AppError> {
     let username = normalize_username(&request.username)?;
     // fail before the client spends seconds on key stretching
-    if is_username_taken(&state, &username).await? {
+    if repo::is_username_taken(&state.db, &username).await? {
         return Err(AppError::Conflict("username is taken".into()));
     }
 
@@ -77,51 +72,36 @@ pub async fn register_finish(
 
     let mut tx = state.db.begin().await?;
 
-    let user_id = sqlx::query_scalar!(
-        "insert into users (username, opaque_record, key_stretching, public_key, encrypted_private_key)
-         values ($1, $2, $3, $4, $5)
-         returning id",
-        username,
-        password_file.serialize().to_vec(),
-        key_stretching,
-        request.public_key,
-        request.encrypted_private_key,
+    let user_id = repo::insert_user(
+        &mut *tx,
+        &username,
+        &password_file.serialize(),
+        &key_stretching,
+        &request.public_key,
+        &request.encrypted_private_key,
     )
-    .fetch_one(&mut *tx)
     .await
-    .map_err(|error| match &error {
-        sqlx::Error::Database(db_error) if db_error.is_unique_violation() => {
-            AppError::Conflict("username is taken".into())
-        }
-        _ => error.into(),
-    })?;
+    .map_err(AppError::conflict_on_unique("username is taken"))?;
 
     let workspace = request.workspace;
-    sqlx::query!(
-        "insert into workspaces (id, encrypted_name) values ($1, $2)",
+    workspaces::insert_with_owner(
+        &mut tx,
         workspace.id,
-        workspace.encrypted_name,
-    )
-    .execute(&mut *tx)
-    .await?;
-    sqlx::query!(
-        "insert into workspace_members (workspace_id, user_id, role, encrypted_workspace_key)
-         values ($1, $2, 'owner', $3)",
-        workspace.id,
+        &workspace.encrypted_name,
         user_id,
-        workspace.encrypted_workspace_key,
+        &workspace.encrypted_workspace_key,
     )
-    .execute(&mut *tx)
     .await?;
-    sqlx::query!(
-        "insert into changes (workspace_id, entity, entity_id, operation)
-         values ($1, 'workspace', $1, 'upsert')",
+    changes::record(
+        &mut tx,
         workspace.id,
+        Entity::Workspace,
+        workspace.id,
+        Operation::Upsert,
     )
-    .execute(&mut *tx)
     .await?;
 
-    let session = create_session(&mut tx, user_id).await?;
+    let session = create_session(&mut *tx, user_id).await?;
     tx.commit().await?;
 
     Ok((
@@ -146,16 +126,8 @@ pub async fn login_start(
     let credential_request = CredentialRequest::<Suite>::deserialize(&request.credential_request)
         .map_err(|_| AppError::bad_request("invalid credential request"))?;
 
-    sqlx::query!("delete from login_attempts where expires_at < now()")
-        .execute(&state.db)
-        .await?;
-
-    let user = sqlx::query!(
-        "select id, opaque_record, key_stretching from users where username = $1",
-        username,
-    )
-    .fetch_optional(&state.db)
-    .await?;
+    repo::delete_expired_login_attempts(&state.db).await?;
+    let user = repo::find_login_user(&state.db, &username).await?;
 
     let password_file = user
         .as_ref()
@@ -178,15 +150,12 @@ pub async fn login_start(
     )
     .map_err(|_| AppError::bad_request("invalid credential request"))?;
 
-    let login_id = sqlx::query_scalar!(
-        "insert into login_attempts (user_id, opaque_server_state, expires_at)
-         values ($1, $2, now() + make_interval(secs => $3))
-         returning id",
+    let login_id = repo::insert_login_attempt(
+        &state.db,
         user.map(|user| user.id),
-        result.state.serialize().to_vec(),
+        &result.state.serialize(),
         LOGIN_ATTEMPT_TTL_SECONDS,
     )
-    .fetch_one(&state.db)
     .await?;
 
     Ok(Json(LoginStartResponse {
@@ -200,14 +169,9 @@ pub async fn login_finish(
     State(state): State<AppState>,
     Json(request): Json<LoginFinishRequest>,
 ) -> Result<Json<LoginFinishResponse>, AppError> {
-    let attempt = sqlx::query!(
-        "delete from login_attempts where id = $1 and expires_at > now()
-         returning user_id, opaque_server_state",
-        request.login_id,
-    )
-    .fetch_optional(&state.db)
-    .await?
-    .ok_or(AppError::Unauthorized)?;
+    let attempt = repo::take_login_attempt(&state.db, request.login_id)
+        .await?
+        .ok_or(AppError::Unauthorized)?;
 
     let server_login = ServerLogin::<Suite>::deserialize(&attempt.opaque_server_state)
         .map_err(|error| AppError::Internal(error.to_string()))?;
@@ -220,7 +184,7 @@ pub async fn login_finish(
     let user_id = attempt.user_id.ok_or(AppError::Unauthorized)?;
 
     let mut tx = state.db.begin().await?;
-    let session = create_session(&mut tx, user_id).await?;
+    let session = create_session(&mut *tx, user_id).await?;
     let account = load_account(&mut tx, user_id).await?;
     tx.commit().await?;
 
@@ -228,9 +192,7 @@ pub async fn login_finish(
 }
 
 pub async fn logout(State(state): State<AppState>, auth: AuthUser) -> Result<StatusCode, AppError> {
-    sqlx::query!("delete from sessions where id = $1", auth.session_id)
-        .execute(&state.db)
-        .await?;
+    sessions::delete(&state.db, auth.session_id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -240,9 +202,7 @@ pub async fn password_start(
     Json(request): Json<PasswordStartRequest>,
 ) -> Result<Json<RegisterStartResponse>, AppError> {
     auth.require_recent_login()?;
-    let username = sqlx::query_scalar!("select username from users where id = $1", auth.user_id)
-        .fetch_one(&state.db)
-        .await?;
+    let username = repo::username(&state.db, auth.user_id).await?;
 
     let registration_request =
         RegistrationRequest::<Suite>::deserialize(&request.registration_request)
@@ -275,24 +235,16 @@ pub async fn password_finish(
         .map_err(|error| AppError::Internal(error.to_string()))?;
 
     let mut tx = state.db.begin().await?;
-    sqlx::query!(
-        "update users set opaque_record = $2, key_stretching = $3, encrypted_private_key = $4
-         where id = $1",
+    repo::update_credentials(
+        &mut *tx,
         auth.user_id,
-        password_file.serialize().to_vec(),
-        key_stretching,
-        request.encrypted_private_key,
+        &password_file.serialize(),
+        &key_stretching,
+        &request.encrypted_private_key,
     )
-    .execute(&mut *tx)
     .await?;
     // everyone else signed in with the old password gets signed out
-    sqlx::query!(
-        "delete from sessions where user_id = $1 and id <> $2",
-        auth.user_id,
-        auth.session_id,
-    )
-    .execute(&mut *tx)
-    .await?;
+    sessions::delete_others(&mut *tx, auth.user_id, auth.session_id).await?;
     tx.commit().await?;
 
     Ok(StatusCode::NO_CONTENT)
