@@ -1,3 +1,4 @@
+import { MotionConfig } from "motion/react";
 import {
   isRouteErrorResponse,
   Links,
@@ -7,28 +8,44 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import interFont from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+import jetbrainsMonoFont from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
+
 import type { Route } from "./+types/root";
 import "./app.css";
+import { useApplyTheme, useTheme } from "~/hooks/use-theme";
+import { getThemeScript } from "~/lib/theme";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  { rel: "icon", href: "/logo.svg", type: "image/svg+xml" },
   {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
+    rel: "preload",
+    href: interFont,
+    as: "font",
+    type: "font/woff2",
     crossOrigin: "anonymous",
   },
   {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+    rel: "preload",
+    href: jetbrainsMonoFont,
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
   },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // the theme script adds the dark class before React hydrates
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: getThemeScript(),
+          }}
+        />
         <Meta />
         <Links />
       </head>
@@ -41,8 +58,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function HydrateFallback() {
+  return null;
+}
+
 export default function App() {
-  return <Outlet />;
+  const { theme } = useTheme();
+  useApplyTheme(theme);
+
+  return (
+    <MotionConfig reducedMotion="user">
+      <Outlet />
+    </MotionConfig>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

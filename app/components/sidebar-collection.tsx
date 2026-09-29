@@ -1,0 +1,79 @@
+import { Collapsible } from "@base-ui/react/collapsible";
+import { ChevronRight, Folder } from "lucide-react";
+import { useState } from "react";
+
+import { CollectionContextMenuItems } from "~/components/collection-context-menu-items";
+import { SidebarContextMenu } from "~/components/sidebar-context-menu";
+import { SidebarNoteLink } from "~/components/sidebar-note-link";
+import { SidebarRenameInput } from "~/components/sidebar-rename-input";
+import { useCollectionActions } from "~/hooks/use-collection-actions";
+import type { Collection } from "~/lib/vault/types";
+
+type SidebarCollectionProps = {
+  collection: Collection;
+};
+
+export function SidebarCollection({ collection }: SidebarCollectionProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const actions = useCollectionActions(collection.id);
+  const name = actions.pendingName ?? collection.name;
+
+  return (
+    <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
+      {isRenaming ? (
+        <SidebarRenameInput
+          icon={Folder}
+          label="Collection name"
+          defaultValue={name}
+          onSubmit={(value) => {
+            actions.rename(value);
+            setIsRenaming(false);
+          }}
+          onCancel={() => setIsRenaming(false)}
+        />
+      ) : (
+        <SidebarContextMenu
+          menu={
+            <CollectionContextMenuItems
+              collection={collection}
+              actions={actions}
+              onRename={() => setIsRenaming(true)}
+              onCreateSubcollection={() => {
+                actions.createSubcollection();
+                setIsOpen(true);
+              }}
+            />
+          }
+        >
+          <Collapsible.Trigger className="group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm text-neutral-700 transition-colors hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100">
+            <Folder className="size-4 shrink-0" />
+            <span className="flex-1 truncate text-left">{name}</span>
+            <ChevronRight className="size-3.5 shrink-0 transition-[rotate] duration-150 ease-out group-data-panel-open:rotate-90 motion-reduce:transition-none" />
+          </Collapsible.Trigger>
+        </SidebarContextMenu>
+      )}
+      <Collapsible.Panel className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 ease-out motion-reduce:transition-none data-ending-style:h-0 data-starting-style:h-0">
+        <div className="flex flex-col gap-0.5 pt-0.5 pl-4">
+          {collection.children.map((child) => (
+            <SidebarCollection key={child.id} collection={child} />
+          ))}
+          {collection.notes.map((note) => (
+            <SidebarNoteLink
+              key={note.id}
+              note={note}
+              source={`collection:${collection.id}`}
+              collectionId={collection.id}
+            />
+          ))}
+          {collection.children.length === 0 &&
+            collection.notes.length === 0 && (
+              <p className="px-1.5 py-1 text-sm text-neutral-600 dark:text-neutral-400">
+                Empty
+              </p>
+            )}
+        </div>
+      </Collapsible.Panel>
+    </Collapsible.Root>
+  );
+}

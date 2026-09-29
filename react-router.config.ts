@@ -1,7 +1,6 @@
 import type { Config } from "@react-router/dev/config";
 
 export default {
-  // Config options...
-  // Server-side render by default, to enable SPA mode set this to `false`
-  ssr: true,
+  // all workspace data is decrypted in the browser, so the app ships as static files served by the rust server
+  ssr: false,
 } satisfies Config;

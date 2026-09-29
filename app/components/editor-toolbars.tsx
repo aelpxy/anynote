@@ -1,0 +1,83 @@
+import { TextSelection, type EditorState } from "@milkdown/kit/prose/state";
+import type { EditorView } from "@milkdown/kit/prose/view";
+
+import { LinkForm } from "~/components/link-form";
+import { LinkPopover } from "~/components/link-popover";
+import { SelectionToolbar } from "~/components/selection-toolbar";
+import { TableToolbar } from "~/components/table-toolbar";
+import {
+  findLinkAt,
+  findParentNode,
+  type LinkRange,
+} from "~/lib/editor-selection";
+
+type EditorToolbarsProps = {
+  view: EditorView;
+  state: EditorState;
+  hasFocus: boolean;
+  editingLink: LinkRange | null;
+  onEditLink: (link: LinkRange | null) => void;
+  onOpenLink: (href: string) => void;
+};
+
+export function EditorToolbars({
+  view,
+  state,
+  hasFocus,
+  editingLink,
+  onEditLink: setEditingLink,
+  onOpenLink,
+}: EditorToolbarsProps) {
+
+  if (editingLink) {
+    return (
+      <LinkForm
+        view={view}
+        link={editingLink}
+        onClose={() => setEditingLink(null)}
+      />
+    );
+  }
+
+  if (!hasFocus) return null;
+
+  const { selection } = state;
+  const link = findLinkAt(state);
+  const table = findParentNode(state, "table");
+  const hasTextSelection =
+    selection instanceof TextSelection &&
+    !selection.empty &&
+    !findParentNode(state, "code_block");
+
+  if (hasTextSelection) {
+    return (
+      <SelectionToolbar
+        view={view}
+        state={state}
+        isLinkActive={Boolean(link)}
+        onLink={() =>
+          setEditingLink(
+            link ?? { from: selection.from, to: selection.to, href: "" },
+          )
+        }
+      />
+    );
+  }
+
+  if (link) {
+    return (
+      <LinkPopover
+        view={view}
+        link={link}
+        onOpen={onOpenLink}
+        onEdit={() => setEditingLink(link)}
+      />
+    );
+  }
+
+  if (table) {
+    return <TableToolbar view={view} state={state} tablePos={table.pos} />;
+  }
+
+  return null;
+}

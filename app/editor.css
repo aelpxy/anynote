@@ -1,0 +1,389 @@
+/* base rules ProseMirror requires; normally shipped as prosemirror-view/style/prosemirror.css */
+.ProseMirror {
+  position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+
+  & li {
+    position: relative;
+  }
+
+  & [draggable][contenteditable="false"] {
+    user-select: text;
+  }
+}
+
+.ProseMirror-hideselection {
+  caret-color: transparent;
+
+  & *::selection {
+    background: transparent;
+  }
+}
+
+img.ProseMirror-separator {
+  display: inline !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+.ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+
+  &::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: -2px;
+    width: 20px;
+    border-top: 1px solid currentColor;
+    animation: gapcursor-blink 1.1s steps(2, start) infinite;
+  }
+}
+
+.ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}
+
+@keyframes gapcursor-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.note-editor .ProseMirror {
+  @apply min-h-[60vh] pb-[30vh] text-base leading-7 text-neutral-800 caret-neutral-900 outline-none selection:bg-neutral-300 dark:text-neutral-200 dark:caret-neutral-100 dark:selection:bg-neutral-700;
+
+  & .ProseMirror-selectednode {
+    @apply rounded-sm outline-2 outline-offset-2 outline-neutral-400 dark:outline-neutral-600;
+  }
+
+  & p.is-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-neutral-400 content-[attr(data-placeholder)] dark:text-neutral-600;
+  }
+
+  & > * + * {
+    @apply mt-3;
+  }
+
+  & h1,
+  & h2,
+  & h3,
+  & h4,
+  & h5,
+  & h6 {
+    @apply relative scroll-mt-4 font-semibold tracking-tight text-neutral-900 dark:text-neutral-100;
+
+    &:hover .heading-anchor {
+      @apply opacity-100;
+    }
+  }
+
+  & .heading-anchor {
+    @apply absolute top-0 -left-6 w-5 text-center font-normal text-neutral-400 no-underline opacity-0 transition-opacity duration-150 select-none hover:text-neutral-700 focus-visible:opacity-100 motion-reduce:transition-none dark:text-neutral-600 dark:hover:text-neutral-300;
+  }
+
+  & h1 {
+    @apply mt-8 text-2xl;
+  }
+
+  & h2 {
+    @apply mt-6 text-xl;
+  }
+
+  & h3 {
+    @apply mt-5 text-lg;
+  }
+
+  & a {
+    @apply text-neutral-900 underline decoration-neutral-400 underline-offset-2 dark:text-neutral-100 dark:decoration-neutral-600;
+  }
+
+  & strong {
+    @apply font-semibold text-neutral-900 dark:text-neutral-100;
+  }
+
+  & ul {
+    @apply list-disc pl-6;
+  }
+
+  & ol {
+    @apply list-decimal pl-6;
+  }
+
+  & li::marker {
+    @apply text-neutral-400 dark:text-neutral-500;
+  }
+
+  & li > * + * {
+    @apply mt-1;
+  }
+
+  & li[data-item-type="task"] {
+    @apply list-none;
+
+    &::before {
+      @apply absolute top-1.5 -left-6 size-4 cursor-pointer rounded border-[1.5px] border-neutral-400 bg-center bg-no-repeat transition-colors content-[''] motion-reduce:transition-none dark:border-neutral-500;
+      background-size: 12px;
+    }
+
+    &[data-checked="true"] {
+      &::before {
+        @apply border-neutral-800 bg-neutral-800 dark:border-neutral-200 dark:bg-neutral-200;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+
+        @variant dark {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23171717' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+        }
+      }
+
+      & > p {
+        @apply text-neutral-500 line-through decoration-neutral-400 dark:decoration-neutral-600;
+      }
+    }
+  }
+
+  & img {
+    @apply inline-block max-w-full rounded-lg border border-neutral-200 dark:border-neutral-800;
+
+    &.is-loading {
+      @apply h-40 w-64 animate-pulse bg-neutral-100 motion-reduce:animate-none dark:bg-neutral-800;
+    }
+
+    &.is-broken {
+      @apply px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400;
+    }
+  }
+
+  & .upload-placeholder {
+    @apply inline-flex animate-pulse rounded-md bg-neutral-100 px-2 py-1 text-sm text-neutral-600 motion-reduce:animate-none dark:bg-neutral-800 dark:text-neutral-400;
+  }
+
+  & blockquote {
+    @apply border-l-2 border-neutral-300 pl-4 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400;
+
+    & > * + * {
+      @apply mt-2;
+    }
+  }
+
+  & code {
+    @apply rounded bg-neutral-100 px-1 py-0.5 font-mono text-[0.875em] dark:bg-neutral-800;
+  }
+
+  & .milkdown-code-block {
+    @apply relative overflow-visible rounded-lg border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900;
+
+    & .tools {
+      @apply flex items-center justify-between px-2 pt-1.5;
+    }
+
+    & .language-button,
+    & .copy-button {
+      @apply flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-neutral-600 transition-colors hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100;
+    }
+
+    & .copy-button::after {
+      content: "Copy";
+    }
+
+    & .copy-button[data-copied]::after {
+      content: "Copied";
+    }
+
+    & .language-button[data-expanded="true"] {
+      @apply bg-neutral-200/60 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100;
+    }
+
+    & .tools-button-group {
+      @apply opacity-0 transition-opacity duration-150 motion-reduce:transition-none;
+    }
+
+    &:hover .tools-button-group,
+    & .tools-button-group:focus-within,
+    & .tools-button-group:has([data-copied]) {
+      @apply opacity-100;
+    }
+
+    & .milkdown-icon {
+      @apply flex;
+    }
+
+    & .language-picker {
+      @apply absolute z-20;
+    }
+
+    & .list-wrapper {
+      @apply w-56 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg shadow-neutral-900/10 dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-black/40;
+    }
+
+    & .search-box {
+      @apply flex items-center gap-2 border-b border-neutral-200 px-2.5 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400;
+    }
+
+    & .search-input {
+      @apply h-8 min-w-0 flex-1 bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-500 dark:text-neutral-100 dark:placeholder:text-neutral-400;
+    }
+
+    & .clear-icon {
+      @apply cursor-pointer;
+
+      &.hidden {
+        @apply hidden;
+      }
+    }
+
+    & .language-list {
+      @apply max-h-60 list-none overflow-y-auto p-1;
+    }
+
+    & .language-list-item {
+      @apply mt-0 cursor-default rounded-md px-2 py-1 text-sm text-neutral-700 outline-none hover:bg-neutral-100 hover:text-neutral-900 focus-visible:bg-neutral-100 aria-selected:font-medium aria-selected:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-neutral-100 dark:focus-visible:bg-neutral-700 dark:aria-selected:text-neutral-100;
+
+      &.no-result {
+        @apply text-neutral-600 hover:bg-transparent dark:text-neutral-400;
+      }
+    }
+
+    & .codemirror-host.hidden,
+    & .preview-panel:empty {
+      @apply hidden;
+    }
+
+    & .cm-editor {
+      @apply bg-transparent text-sm outline-none;
+    }
+
+    & .cm-scroller {
+      @apply px-4 pt-1 pb-3 font-mono leading-6;
+    }
+
+    & .cm-content {
+      @apply p-0;
+    }
+
+    /* codemirror hides the native caret and draws its own, black by default */
+    & .cm-cursor {
+      @apply border-l-[1.5px] border-neutral-900 dark:border-neutral-100;
+    }
+
+    & .cm-line {
+      @apply p-0;
+    }
+
+    & .cm-selectionBackground,
+    & .cm-focused .cm-selectionBackground {
+      @apply bg-neutral-200! dark:bg-neutral-700!;
+    }
+  }
+
+  /* syntax colors are the one deliberate exception to the neutral palette */
+  & .tok-keyword,
+  & .tok-operatorKeyword,
+  & .tok-modifier {
+    @apply text-violet-700 dark:text-violet-300;
+  }
+
+  & .tok-string,
+  & .tok-string2,
+  & .tok-inserted {
+    @apply text-emerald-700 dark:text-emerald-300;
+  }
+
+  & .tok-number,
+  & .tok-bool,
+  & .tok-atom,
+  & .tok-literal {
+    @apply text-amber-700 dark:text-amber-300;
+  }
+
+  & .tok-comment,
+  & .tok-meta {
+    @apply text-neutral-500 italic;
+  }
+
+  & .tok-typeName,
+  & .tok-className,
+  & .tok-namespace {
+    @apply text-teal-700 dark:text-teal-300;
+  }
+
+  & .tok-definition,
+  & .tok-function {
+    @apply text-sky-700 dark:text-sky-300;
+  }
+
+  & .tok-propertyName,
+  & .tok-labelName {
+    @apply text-sky-800 dark:text-sky-200;
+  }
+
+  & .tok-macroName,
+  & .tok-variableName.tok-special {
+    @apply text-rose-700 dark:text-rose-300;
+  }
+
+  & .tok-operator,
+  & .tok-punctuation {
+    @apply text-neutral-500 dark:text-neutral-400;
+  }
+
+  & .tok-heading,
+  & .tok-strong {
+    @apply font-semibold text-neutral-900 dark:text-neutral-100;
+  }
+
+  & .tok-emphasis {
+    @apply italic;
+  }
+
+  & .tok-link,
+  & .tok-url {
+    @apply text-sky-700 underline dark:text-sky-300;
+  }
+
+  & .tok-deleted,
+  & .tok-invalid {
+    @apply text-rose-700 dark:text-rose-300;
+  }
+
+  & hr {
+    @apply my-6 border-neutral-200 dark:border-neutral-800;
+  }
+
+  & table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  & th,
+  & td {
+    @apply border border-neutral-200 px-3 py-1.5 text-left dark:border-neutral-800;
+  }
+
+  & th {
+    @apply bg-neutral-50 font-medium dark:bg-neutral-900;
+  }
+}
+
+@media print {
+  .note-editor .ProseMirror {
+    @apply min-h-0 pb-0;
+
+    & .heading-anchor,
+    & .milkdown-code-block .tools {
+      @apply hidden;
+    }
+
+    & .milkdown-code-block,
+    & pre,
+    & table,
+    & blockquote {
+      break-inside: avoid;
+    }
+  }
+}

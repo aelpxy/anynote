@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <style>
+    .page { fill: #171717; }
+    .fold { fill: #737373; }
+    .letter { stroke: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .page { fill: #f5f5f5; }
+      .fold { fill: #a3a3a3; }
+      .letter { stroke: #0a0a0a; }
+    }
+  </style>
+  <path class="page" d="M9 3h11l9 9v12a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5Z"/>
+  <path class="fold" d="M20 3v5a4 4 0 0 0 4 4h5"/>
+  <g class="letter" stroke-width="2.6" stroke-linecap="round">
+    <circle cx="15.8" cy="19.5" r="4.2"/>
+    <path d="M20 15.3v8.4"/>
+  </g>
+</svg>
