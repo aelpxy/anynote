@@ -9,6 +9,7 @@ import { history } from "@milkdown/kit/plugin/history";
 import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
 import { trailing } from "@milkdown/kit/plugin/trailing";
 import { upload, uploadConfig } from "@milkdown/kit/plugin/upload";
+import { columnResizing } from "@milkdown/kit/prose/tables";
 import {
   commonmark,
   headingIdGenerator,
@@ -16,6 +17,7 @@ import {
 import { gfm } from "@milkdown/kit/preset/gfm";
 import type { EditorState } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
+import { $prose } from "@milkdown/kit/utils";
 import { Milkdown, useEditor } from "@milkdown/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useMatch, useNavigate, useRouteLoaderData } from "react-router";
@@ -23,8 +25,10 @@ import { useMatch, useNavigate, useRouteLoaderData } from "react-router";
 import { EditorContextMenu } from "~/components/editor-context-menu";
 import { EditorToolbars } from "~/components/editor-toolbars";
 import { FindBar } from "~/components/find-bar";
+import { ImageLightbox } from "~/components/image-lightbox";
 import { LinkHoverPreview } from "~/components/link-hover-preview";
 import { NoteLinkSuggest } from "~/components/note-link-suggest";
+import { TableAddControls } from "~/components/table-add-controls";
 import { autolinkPlugin } from "~/lib/autolink-plugin";
 import { codeBlockOptions } from "~/lib/code-block-options";
 import type { LinkRange } from "~/lib/editor-selection";
@@ -44,8 +48,16 @@ import { createLinkClickPlugin } from "~/lib/link-click-plugin";
 import { linkSanitizerPlugin } from "~/lib/link-sanitizer-plugin";
 import { placeholderPlugin } from "~/lib/placeholder-plugin";
 import { toSafeHref } from "~/lib/safe-url";
+import {
+  tableCellWithWidthSchema,
+  tableColumnsRemark,
+  tableHeaderWithWidthSchema,
+  tableWithColumnsSchema,
+} from "~/lib/table-columns";
 import { taskListPlugin } from "~/lib/task-list-plugin";
 import type { clientLoader as layoutLoader } from "~/routes/sidebar-layout";
+
+const tableColumnResizing = $prose(() => columnResizing({ cellMinWidth: 60, handleWidth: 6 }));
 
 type EditorSnapshot = {
   view: EditorView;
@@ -70,6 +82,7 @@ export function NoteEditorContent({
   const [find, setFind] = useState<{ initialQuery: string; focusRequest: number } | null>(null);
   const [snapshot, setSnapshot] = useState<EditorSnapshot | null>(null);
   const [editingLink, setEditingLink] = useState<LinkRange | null>(null);
+  const [editingCaptionPos, setEditingCaptionPos] = useState<number | null>(null);
   const onChangeRef = useRef(onChange);
   const navigateRef = useRef(navigate);
 
@@ -120,7 +133,12 @@ export function NoteEditorContent({
         .use(createKeyInterceptPlugin(keyInterceptorRef))
         .use(commonmark)
         .use(nullSafeImageSchema)
+        .use(tableColumnResizing)
         .use(gfm)
+        .use(tableColumnsRemark)
+        .use(tableWithColumnsSchema)
+        .use(tableCellWithWidthSchema)
+        .use(tableHeaderWithWidthSchema)
         .use(history)
         .use(listener)
         // before clipboard so pasting a URL onto a selection links it instead of replacing it
@@ -195,9 +213,13 @@ export function NoteEditorContent({
             hasFocus={snapshot.hasFocus}
             editingLink={editingLink}
             onEditLink={setEditingLink}
+            editingCaptionPos={editingCaptionPos}
+            onEditCaption={setEditingCaptionPos}
             onOpenLink={openLink}
           />
           <LinkHoverPreview root={snapshot.view.dom} onOpen={openLink} />
+          <TableAddControls view={snapshot.view} />
+          <ImageLightbox />
           {find && (
             <FindBar
               view={snapshot.view}

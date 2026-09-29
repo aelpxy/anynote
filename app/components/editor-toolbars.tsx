@@ -1,6 +1,8 @@
-import { TextSelection, type EditorState } from "@milkdown/kit/prose/state";
+import { NodeSelection, TextSelection, type EditorState } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
 
+import { ImageCaptionForm } from "~/components/image-caption-form";
+import { ImageToolbar } from "~/components/image-toolbar";
 import { LinkForm } from "~/components/link-form";
 import { LinkPopover } from "~/components/link-popover";
 import { SelectionToolbar } from "~/components/selection-toolbar";
@@ -17,6 +19,8 @@ type EditorToolbarsProps = {
   hasFocus: boolean;
   editingLink: LinkRange | null;
   onEditLink: (link: LinkRange | null) => void;
+  editingCaptionPos: number | null;
+  onEditCaption: (pos: number | null) => void;
   onOpenLink: (href: string) => void;
 };
 
@@ -26,8 +30,15 @@ export function EditorToolbars({
   hasFocus,
   editingLink,
   onEditLink: setEditingLink,
+  editingCaptionPos,
+  onEditCaption,
   onOpenLink,
 }: EditorToolbarsProps) {
+  if (editingCaptionPos !== null) {
+    return (
+      <ImageCaptionForm view={view} pos={editingCaptionPos} onClose={() => onEditCaption(null)} />
+    );
+  }
 
   if (editingLink) {
     return (
@@ -48,6 +59,17 @@ export function EditorToolbars({
     selection instanceof TextSelection &&
     !selection.empty &&
     !findParentNode(state, "code_block");
+
+  if (selection instanceof NodeSelection && selection.node.type.name === "image") {
+    return (
+      <ImageToolbar
+        view={view}
+        pos={selection.from}
+        node={selection.node}
+        onEditCaption={() => onEditCaption(selection.from)}
+      />
+    );
+  }
 
   if (hasTextSelection) {
     return (

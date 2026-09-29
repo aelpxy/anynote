@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SidebarAddButton } from "~/components/sidebar-add-button";
 import { SidebarCollection } from "~/components/sidebar-collection";
@@ -15,6 +15,8 @@ import { useRevealOpenNote } from "~/hooks/use-reveal-open-note";
 import { useSidebarDropTargets } from "~/hooks/use-sidebar-drop-targets";
 import { clearNoteSelection } from "~/lib/ui/note-selection";
 import type { Collection, Note } from "~/lib/vault/types";
+
+const sidebarScrollKey = "anynote:sidebar-scroll";
 
 type SidebarProps = {
   favorites: Note[];
@@ -35,6 +37,16 @@ export function Sidebar({
 }: SidebarProps) {
   const dropTargets = useSidebarDropTargets();
   const [isResizing, setIsResizing] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    nav.scrollTop = Number(sessionStorage.getItem(sidebarScrollKey)) || 0;
+    const save = () => sessionStorage.setItem(sidebarScrollKey, String(nav.scrollTop));
+    nav.addEventListener("scroll", save, { passive: true });
+    return () => nav.removeEventListener("scroll", save);
+  }, []);
   useRevealOpenNote(collections);
 
   useEffect(() => {
@@ -73,6 +85,7 @@ export function Sidebar({
             <SidebarSearchButton onClick={onSearch} />
           </div>
           <motion.nav
+            ref={navRef}
             aria-label="Notes"
             layoutScroll
             className="mt-4 flex flex-1 flex-col gap-4 overflow-y-auto px-1.5 pb-2"

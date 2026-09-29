@@ -387,13 +387,50 @@ img.ProseMirror-separator {
     @apply my-6 border-neutral-200 dark:border-neutral-800;
   }
 
+  & .tableWrapper {
+    @apply overflow-x-auto;
+  }
+
   & table {
     @apply w-full border-collapse text-sm;
+
+    &:has(col[style*="width"]) {
+      @apply table-fixed;
+    }
   }
 
   & th,
   & td {
-    @apply border border-neutral-200 px-3 py-1.5 text-left dark:border-neutral-800;
+    @apply relative border border-neutral-200 px-3 py-1.5 text-left dark:border-neutral-800;
+  }
+
+  & .column-resize-handle {
+    @apply pointer-events-none absolute top-0 -right-0.5 -bottom-px z-10 w-1 bg-neutral-400 dark:bg-neutral-500;
+  }
+
+  &.resize-cursor {
+    @apply cursor-col-resize;
+  }
+
+  & .note-image {
+    @apply relative inline-block max-w-full align-bottom;
+
+    & img {
+      @apply cursor-zoom-in;
+    }
+
+    &:hover .note-image-handle,
+    &.ProseMirror-selectednode .note-image-handle {
+      @apply opacity-100;
+    }
+  }
+
+  & .note-image-handle {
+    @apply absolute top-1/2 -right-2.5 h-10 w-1.5 -translate-y-1/2 cursor-ew-resize rounded-full bg-neutral-400 opacity-0 transition-opacity motion-reduce:transition-none dark:bg-neutral-500;
+  }
+
+  & .note-image-caption:not([hidden]) {
+    @apply mt-1.5 block text-center text-sm text-neutral-500 dark:text-neutral-400;
   }
 
   & th {

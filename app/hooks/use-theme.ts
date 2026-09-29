@@ -7,13 +7,13 @@ export function useTheme() {
   return { theme, setTheme: storeTheme };
 }
 
-const themeTransitionMs = 250;
-
 function applyThemeSmoothly(theme: Theme) {
-  const root = document.documentElement;
-  root.classList.add("theme-transition");
-  applyTheme(theme);
-  setTimeout(() => root.classList.remove("theme-transition"), themeTransitionMs);
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!document.startViewTransition || prefersReducedMotion) {
+    applyTheme(theme);
+    return;
+  }
+  document.startViewTransition(() => applyTheme(theme));
 }
 
 export function useApplyTheme(theme: Theme) {

@@ -13,6 +13,7 @@ import { NoteTitleInput } from "~/components/note-title-input";
 import { PageHeader } from "~/components/page-header";
 import { useConnection } from "~/hooks/use-connection";
 import { useDebouncedCallback } from "~/hooks/use-debounced-callback";
+import { useNoteScrollMemory } from "~/hooks/use-note-scroll-memory";
 import { useNoteActions } from "~/hooks/use-note-actions";
 import { usePageFileDrop } from "~/hooks/use-page-file-drop";
 import { saveNowEvent } from "~/lib/ui/shortcuts";
@@ -25,6 +26,7 @@ type NoteViewProps = {
 
 export function NoteView({ note, backlinks }: NoteViewProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const articleRef = useRef<HTMLElement>(null);
   const latestContentRef = useRef(note.content);
   const [markdown, setMarkdown] = useState(note.content);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
@@ -35,6 +37,7 @@ export function NoteView({ note, backlinks }: NoteViewProps) {
     actions.saveContent(content);
   }, 500);
   usePageFileDrop(editorRef);
+  useNoteScrollMemory(note.id, articleRef);
 
   useEffect(() => {
     const flush = saveContent.flush;
@@ -81,7 +84,7 @@ export function NoteView({ note, backlinks }: NoteViewProps) {
         }
       />
       <h1 className="sr-only">{note.title}</h1>
-      <article className="mx-auto max-w-(--note-page-width) px-5 pt-2 pb-[30vh] sm:px-12 print:pb-0">
+      <article ref={articleRef} className="mx-auto max-w-(--note-page-width) px-5 pt-2 pb-[30vh] sm:px-12 print:pb-0">
         <div className="group/title">
           <NoteIconPicker icon={note.icon} onChange={actions.setIcon} />
           <NoteTitleInput note={note} onContinue={focusEditor} />
