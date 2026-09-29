@@ -2,7 +2,7 @@ import { data } from "react-router";
 
 import type { Route } from "./+types/trash";
 import { TrashView } from "~/components/trash-view";
-import { deleteNote, setNoteTrashed } from "~/lib/vault/note-mutations";
+import { deleteNote, emptyTrash, setNoteTrashed } from "~/lib/vault/note-mutations";
 import { getTrashedNotes } from "~/lib/vault/queries";
 import { requireVault } from "~/lib/vault/require-vault";
 
@@ -25,6 +25,9 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       return null;
     case "delete":
       await deleteNote(vault, noteId);
+      return null;
+    case "empty":
+      await emptyTrash(vault);
       return null;
     default:
       throw data("Invalid intent", { status: 400 });

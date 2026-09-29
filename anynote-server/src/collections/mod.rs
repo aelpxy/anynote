@@ -19,6 +19,14 @@ pub fn routes() -> Router<AppState> {
             patch(handlers::update).delete(handlers::delete),
         )
         .route(
+            "/workspaces/{workspace_id}/collections/order",
+            put(handlers::reorder),
+        )
+        .route(
+            "/workspaces/{workspace_id}/collections/{collection_id}/notes",
+            put(handlers::reorder_notes),
+        )
+        .route(
             "/workspaces/{workspace_id}/collections/{collection_id}/notes/{note_id}",
             put(handlers::add_note).delete(handlers::remove_note),
         )

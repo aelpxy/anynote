@@ -39,6 +39,12 @@ pub struct UpdateCollection {
     pub position: Option<i32>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Order {
+    pub ids: Vec<Uuid>,
+}
+
 pub fn present<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<Option<Option<Uuid>>, D::Error> {

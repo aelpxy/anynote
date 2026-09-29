@@ -18,3 +18,12 @@ export function useSidebarSelection(to: string, source: string) {
     state: { sidebarSource: source },
   };
 }
+
+export function useOpenSidebarNote() {
+  const location = useLocation();
+  const noteId = useMatch("/notes/:noteId")?.params.noteId;
+  return {
+    noteId,
+    source: (location.state as SidebarLocationState)?.sidebarSource ?? defaultSource,
+  };
+}

@@ -17,12 +17,16 @@ function toNote(note: VaultNote): Note {
   };
 }
 
-function byCreation(a: VaultNote, b: VaultNote) {
-  return a.createdAt.localeCompare(b.createdAt);
+export function getSortKey(note: VaultNote) {
+  return note.position ?? Date.parse(note.createdAt);
+}
+
+function byPosition(a: VaultNote, b: VaultNote) {
+  return getSortKey(a) - getSortKey(b);
 }
 
 export function getActiveNotes(vault: Vault) {
-  return [...vault.notes.values()].filter((note) => note.trashedAt === null).sort(byCreation);
+  return [...vault.notes.values()].filter((note) => note.trashedAt === null).sort(byPosition);
 }
 
 export function getNotes(vault: Vault) {
@@ -84,4 +88,14 @@ export function flattenCollections(tree: Collection[], parentLabel = ""): Collec
     const label = parentLabel ? `${parentLabel} / ${collection.name}` : collection.name;
     return [{ collection, label }, ...flattenCollections(collection.children, label)];
   });
+}
+
+export function countCollectionNotes(collection: Collection) {
+  const noteIds = new Set<string>();
+  const visit = ({ notes, children }: Collection) => {
+    for (const note of notes) noteIds.add(note.id);
+    children.forEach(visit);
+  };
+  visit(collection);
+  return noteIds.size;
 }

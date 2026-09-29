@@ -13,6 +13,7 @@ export default [
   layout("routes/sidebar-layout.tsx", [
     index("routes/home.tsx"),
     route("notes", "routes/notes.tsx"),
+    route("notes/bulk", "routes/notes-bulk.tsx"),
     route("notes/:noteId", "routes/note.tsx"),
     route("notes/:noteId/preview", "routes/note-preview.tsx"),
     route("collections", "routes/collections.tsx"),

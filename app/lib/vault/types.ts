@@ -34,6 +34,8 @@ export type NoteContent = {
   title: string;
   content: string;
   isFavorite: boolean;
+  // sort key for the document list; notes without one sort by creation time
+  position?: number;
 };
 
 export type VaultNote = NoteContent & {
@@ -60,4 +62,9 @@ export type Vault = {
   workspaceKey: Uint8Array;
   notes: Map<string, VaultNote>;
   collections: Map<string, VaultCollection>;
+};
+
+export type Placement = {
+  anchorId: string;
+  side: "before" | "after";
 };

@@ -48,3 +48,10 @@ export function deleteNoteRecord(token: string, workspaceId: string, noteId: str
     token,
   });
 }
+
+export function emptyTrashRecords(token: string, workspaceId: string) {
+  return apiRequest<void>(`/workspaces/${workspaceId}/trash`, {
+    method: "DELETE",
+    token,
+  });
+}

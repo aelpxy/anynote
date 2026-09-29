@@ -1,16 +1,17 @@
 import { Collapsible } from "@base-ui/react/collapsible";
 import { ChevronRight, Folder } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CollectionContextMenuItems } from "~/components/collection-context-menu-items";
 import { SidebarContextMenu } from "~/components/sidebar-context-menu";
+import { SidebarDropIndicator } from "~/components/sidebar-drop-indicator";
 import { SidebarNoteLink } from "~/components/sidebar-note-link";
 import { SidebarRenameInput } from "~/components/sidebar-rename-input";
+import { useArrangeActions } from "~/hooks/use-arrange-actions";
 import { useCollectionActions } from "~/hooks/use-collection-actions";
-import { useSidebarDropActions } from "~/hooks/use-sidebar-drop-actions";
 import { useSidebarDropTarget } from "~/hooks/use-sidebar-drop-target";
-import { setSidebarDrag } from "~/lib/ui/sidebar-drag";
-import { flattenCollections } from "~/lib/vault/queries";
+import { getRowZone, setSidebarDrag } from "~/lib/ui/sidebar-drag";
+import { countCollectionNotes, flattenCollections } from "~/lib/vault/queries";
 import type { Collection } from "~/lib/vault/types";
 
 const expandDelayMs = 500;
@@ -23,36 +24,55 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const actions = useCollectionActions(collection.id);
-  const dropActions = useSidebarDropActions();
+  const arrangeActions = useArrangeActions();
+  const rowRef = useRef<HTMLDivElement>(null);
   const name = actions.pendingName ?? collection.name;
+  const noteCount = countCollectionNotes(collection);
 
-  const { isOver, dropTargetProps } = useSidebarDropTarget({
+  const { overZone, dropTargetProps } = useSidebarDropTarget({
     claims: () => true,
-    canDrop: (item) =>
-      item.kind === "note"
-        ? item.collectionId !== collection.id &&
-          !collection.notes.some(({ id }) => id === item.noteId)
-        : !item.subtreeIds.includes(collection.id) &&
-          item.parentId !== collection.id,
-    onDrop: (item) => {
-      if (item.kind === "note") {
-        dropActions.addNoteToCollection(
-          item.noteId,
-          collection.id,
-          item.collectionId,
+    getZone: (event, item) => {
+      if (item.kind === "notes") return "inside";
+      const zone = getRowZone(event, rowRef.current, true);
+      // below an open collection's row come its children, so that edge means inside
+      return zone === "after" && isOpen ? "inside" : zone;
+    },
+    canDrop: (item, zone) => {
+      if (item.kind === "notes") {
+        return (
+          item.collectionId !== collection.id &&
+          !item.noteIds.every((noteId) =>
+            collection.notes.some(({ id }) => id === noteId),
+          )
         );
+      }
+      if (item.subtreeIds.includes(collection.id)) return false;
+      return zone !== "inside" || item.parentId !== collection.id;
+    },
+    onDrop: (item, zone) => {
+      if (item.kind === "notes") {
+        arrangeActions.addToCollection(item.noteIds, collection.id, {
+          fromCollectionId: item.collectionId,
+        });
+      } else if (zone === "inside") {
+        arrangeActions.moveCollection(item.collectionId, collection.id);
       } else {
-        dropActions.moveCollection(item.collectionId, collection.id);
+        arrangeActions.placeCollection(item.collectionId, {
+          anchorId: collection.id,
+          side: zone,
+        });
+        return;
       }
       setIsOpen(true);
     },
   });
+  const isOverInside = overZone === "inside";
 
   useEffect(() => {
-    if (!isOver || isOpen) return;
+    if (!isOverInside || isOpen) return;
     const timeout = setTimeout(() => setIsOpen(true), expandDelayMs);
     return () => clearTimeout(timeout);
-  }, [isOver, isOpen]);
+  }, [isOverInside, isOpen]);
 
   return (
     <Collapsible.Root
@@ -60,61 +80,71 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
       onOpenChange={setIsOpen}
       {...dropTargetProps}
     >
-      {isRenaming ? (
-        <SidebarRenameInput
-          icon={Folder}
-          label="Collection name"
-          defaultValue={name}
-          onSubmit={(value) => {
-            actions.rename(value);
-            setIsRenaming(false);
-          }}
-          onCancel={() => setIsRenaming(false)}
-        />
-      ) : (
-        <SidebarContextMenu
-          menu={
-            <CollectionContextMenuItems
-              collection={collection}
-              actions={actions}
-              onRename={() => setIsRenaming(true)}
-              onCreateSubcollection={() => {
-                actions.createSubcollection();
-                setIsOpen(true);
-              }}
-            />
-          }
-        >
-          <Collapsible.Trigger
-            draggable
-            onDragStart={(event) => {
-              // firefox only starts a drag when some data is set
-              event.dataTransfer.setData("application/x-anynote-collection", collection.id);
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setDragImage(event.currentTarget, 8, 8);
-              setSidebarDrag({
-                kind: "collection",
-                collectionId: collection.id,
-                parentId: collection.parentId,
-                subtreeIds: flattenCollections([collection]).map(
-                  (option) => option.collection.id,
-                ),
-              });
+      <div ref={rowRef} className="relative">
+        {isRenaming ? (
+          <SidebarRenameInput
+            icon={Folder}
+            label="Collection name"
+            defaultValue={name}
+            onSubmit={(value) => {
+              actions.rename(value);
+              setIsRenaming(false);
             }}
-            onDragEnd={() => setSidebarDrag(null)}
-            className={[
-              "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors",
-              isOver
-                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                : "text-neutral-700 hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100",
-            ].join(" ")}
+            onCancel={() => setIsRenaming(false)}
+          />
+        ) : (
+          <SidebarContextMenu
+            menu={
+              <CollectionContextMenuItems
+                collection={collection}
+                actions={actions}
+                onRename={() => setIsRenaming(true)}
+                onCreateSubcollection={() => {
+                  actions.createSubcollection();
+                  setIsOpen(true);
+                }}
+              />
+            }
           >
-            <Folder className="size-4 shrink-0" />
-            <span className="flex-1 truncate text-left">{name}</span>
-            <ChevronRight className="size-3.5 shrink-0 transition-[rotate] duration-150 ease-out group-data-panel-open:rotate-90 motion-reduce:transition-none" />
-          </Collapsible.Trigger>
-        </SidebarContextMenu>
-      )}
+            <Collapsible.Trigger
+              draggable
+              onDragStart={(event) => {
+                // firefox only starts a drag when some data is set
+                event.dataTransfer.setData("application/x-anynote-collection", collection.id);
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setDragImage(event.currentTarget, 8, 8);
+                setSidebarDrag({
+                  kind: "collection",
+                  collectionId: collection.id,
+                  parentId: collection.parentId,
+                  subtreeIds: flattenCollections([collection]).map(
+                    (option) => option.collection.id,
+                  ),
+                });
+              }}
+              onDragEnd={() => setSidebarDrag(null)}
+              className={[
+                "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors",
+                isOverInside
+                  ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+                  : "text-neutral-700 hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100",
+              ].join(" ")}
+            >
+              <Folder className="size-4 shrink-0" />
+              <span className="flex-1 truncate text-left">{name}</span>
+              {noteCount > 0 && (
+                <span className="text-xs text-neutral-500 tabular-nums">
+                  {noteCount}
+                </span>
+              )}
+              <ChevronRight className="size-3.5 shrink-0 transition-[rotate] duration-150 ease-out group-data-panel-open:rotate-90 motion-reduce:transition-none" />
+            </Collapsible.Trigger>
+          </SidebarContextMenu>
+        )}
+        {overZone && overZone !== "inside" && (
+          <SidebarDropIndicator side={overZone} />
+        )}
+      </div>
       <Collapsible.Panel className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 ease-out motion-reduce:transition-none data-ending-style:h-0 data-starting-style:h-0">
         <div className="flex flex-col gap-0.5 pt-0.5 pl-4">
           {collection.children.map((child) => (
@@ -125,6 +155,7 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
               key={note.id}
               note={note}
               source={`collection:${collection.id}`}
+              siblings={collection.notes}
               collectionId={collection.id}
             />
           ))}

@@ -182,3 +182,32 @@ pub async fn delete(
 
     Ok(StatusCode::NO_CONTENT)
 }
+
+pub async fn empty_trash(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(workspace_id): Path<Uuid>,
+) -> Result<StatusCode, AppError> {
+    authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
+
+    let mut tx = state.db.begin().await?;
+    let deleted = sqlx::query_scalar!(
+        "delete from notes where workspace_id = $1 and trashed_at is not null returning id",
+        workspace_id,
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    for note_id in deleted {
+        changes::record(
+            &mut tx,
+            workspace_id,
+            Entity::Note,
+            note_id,
+            Operation::Delete,
+        )
+        .await?;
+    }
+    tx.commit().await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}

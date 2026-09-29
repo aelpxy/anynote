@@ -4,8 +4,10 @@ import type { Route } from "./+types/collection";
 import {
   deleteCollection,
   moveCollection,
+  placeCollection,
   renameCollection,
 } from "~/lib/vault/collection-mutations";
+import { readPlacement } from "~/lib/vault/placement";
 import { requireVault } from "~/lib/vault/require-vault";
 
 export async function clientAction({ params, request }: Route.ClientActionArgs) {
@@ -20,8 +22,13 @@ export async function clientAction({ params, request }: Route.ClientActionArgs) 
       return null;
     }
     case "move": {
+      const placement = readPlacement(formData);
       const parentId = formData.get("parentId");
-      await moveCollection(vault, collectionId, parentId ? String(parentId) : null);
+      if (placement) {
+        await placeCollection(vault, collectionId, placement);
+      } else {
+        await moveCollection(vault, collectionId, parentId ? String(parentId) : null);
+      }
       return null;
     }
     case "delete":

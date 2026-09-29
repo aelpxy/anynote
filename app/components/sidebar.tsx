@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect } from "react";
 
 import { SidebarAddButton } from "~/components/sidebar-add-button";
 import { SidebarCollection } from "~/components/sidebar-collection";
@@ -10,6 +11,7 @@ import { SidebarSearchButton } from "~/components/sidebar-search-button";
 import { SidebarSection } from "~/components/sidebar-section";
 import { WorkspaceMenu } from "~/components/workspace-menu";
 import { useSidebarDropTargets } from "~/hooks/use-sidebar-drop-targets";
+import { clearNoteSelection } from "~/lib/ui/note-selection";
 import type { Collection, Note } from "~/lib/vault/types";
 
 type SidebarProps = {
@@ -26,6 +28,14 @@ export function Sidebar({
   onSearch,
 }: SidebarProps) {
   const dropTargets = useSidebarDropTargets();
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") clearNoteSelection();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <motion.aside
@@ -52,7 +62,12 @@ export function Sidebar({
                 <SidebarEmptyState message="No favorites" />
               )}
               {favorites.map((note) => (
-                <SidebarNoteLink key={note.id} note={note} source="favorites" />
+                <SidebarNoteLink
+                  key={note.id}
+                  note={note}
+                  source="favorites"
+                  siblings={favorites}
+                />
               ))}
             </SidebarSection>
             <SidebarSection
@@ -68,7 +83,12 @@ export function Sidebar({
                 />
               )}
               {documents.map((note) => (
-                <SidebarNoteLink key={note.id} note={note} source="documents" />
+                <SidebarNoteLink
+                  key={note.id}
+                  note={note}
+                  source="documents"
+                  siblings={documents}
+                />
               ))}
             </SidebarSection>
             <SidebarSection

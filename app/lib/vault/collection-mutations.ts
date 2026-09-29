@@ -3,10 +3,12 @@ import {
   createCollectionRecord,
   deleteCollectionRecord,
   removeNoteFromCollectionRecord,
+  reorderCollectionNoteRecords,
+  reorderCollectionRecords,
   updateCollectionRecord,
 } from "~/lib/api/collections";
 import { encryptCollectionName } from "~/lib/vault/codec";
-import type { Vault } from "~/lib/vault/types";
+import type { Placement, Vault } from "~/lib/vault/types";
 
 function requireCollection(vault: Vault, collectionId: string) {
   const collection = vault.collections.get(collectionId);
@@ -24,22 +26,18 @@ function getSubtreeIds(vault: Vault, collectionId: string): string[] {
 export async function createCollection(vault: Vault, parentId: string | null) {
   const id = crypto.randomUUID();
   const name = "Untitled collection";
+  const siblings = [...vault.collections.values()].filter(
+    (collection) => collection.parentId === parentId,
+  );
+  const position = Math.max(0, ...siblings.map((collection) => collection.position + 1));
   await createCollectionRecord(vault.token, vault.workspaceId, {
     id,
     parentId,
     encryptedName: await encryptCollectionName(vault, id, name),
+    position,
   });
 
-  const siblings = [...vault.collections.values()].filter(
-    (collection) => collection.parentId === parentId,
-  );
-  vault.collections.set(id, {
-    id,
-    parentId,
-    name,
-    position: Math.max(0, ...siblings.map((collection) => collection.position + 1)),
-    noteIds: [],
-  });
+  vault.collections.set(id, { id, parentId, name, position, noteIds: [] });
 }
 
 export async function renameCollection(vault: Vault, collectionId: string, name: string) {
@@ -83,4 +81,52 @@ export async function removeNoteFromCollection(vault: Vault, collectionId: strin
     ...collection,
     noteIds: collection.noteIds.filter((id) => id !== noteId),
   });
+}
+
+function insertAt<T>(items: T[], moved: T[], index: number) {
+  return [...items.slice(0, index), ...moved, ...items.slice(index)];
+}
+
+export async function placeCollection(vault: Vault, collectionId: string, placement: Placement) {
+  const { parentId } = requireCollection(vault, placement.anchorId);
+  if (requireCollection(vault, collectionId).parentId !== parentId) {
+    await moveCollection(vault, collectionId, parentId);
+  }
+
+  const siblingIds = [...vault.collections.values()]
+    .filter((collection) => collection.parentId === parentId && collection.id !== collectionId)
+    .sort((a, b) => a.position - b.position)
+    .map((collection) => collection.id);
+  const anchorIndex = siblingIds.indexOf(placement.anchorId);
+  const ids = insertAt(siblingIds, [collectionId], anchorIndex + (placement.side === "after" ? 1 : 0));
+
+  await reorderCollectionRecords(vault.token, vault.workspaceId, ids);
+  ids.forEach((id, position) => {
+    vault.collections.set(id, { ...requireCollection(vault, id), position });
+  });
+}
+
+export async function placeNotesInCollection(
+  vault: Vault,
+  collectionId: string,
+  noteIds: string[],
+  placement?: Placement,
+) {
+  // one at a time so the server appends them in order
+  for (const noteId of noteIds) await addNoteToCollection(vault, collectionId, noteId);
+  if (!placement) return;
+
+  const collection = requireCollection(vault, collectionId);
+  const moving = new Set(noteIds);
+  const rest = collection.noteIds.filter((id) => !moving.has(id));
+  const anchorIndex = rest.indexOf(placement.anchorId);
+  if (anchorIndex === -1) return;
+
+  const ordered = insertAt(
+    rest,
+    collection.noteIds.filter((id) => moving.has(id)),
+    anchorIndex + (placement.side === "after" ? 1 : 0),
+  );
+  await reorderCollectionNoteRecords(vault.token, vault.workspaceId, collectionId, ordered);
+  vault.collections.set(collectionId, { ...collection, noteIds: ordered });
 }

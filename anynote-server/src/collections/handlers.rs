@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     auth::session::AuthUser,
     changes::{self, Entity, Operation},
-    collections::model::{Collection, CreateCollection, UpdateCollection},
+    collections::model::{Collection, CreateCollection, Order, UpdateCollection},
     crypto::envelope,
     error::AppError,
     http::extract::{Json, Path},
@@ -30,6 +30,15 @@ pub async fn subtree_ids(
     )
     .fetch_all(db)
     .await?)
+}
+
+const MAX_ORDER_LEN: usize = 10_000;
+
+fn validate_order(order: &Order) -> Result<(), AppError> {
+    if order.ids.len() > MAX_ORDER_LEN {
+        return Err(AppError::bad_request("too many ids"));
+    }
+    Ok(())
 }
 
 pub async fn list(
@@ -243,6 +252,74 @@ pub async fn remove_note(
         workspace_id,
         collection_id,
         note_id,
+    )
+    .execute(&mut *tx)
+    .await?;
+    changes::record(
+        &mut tx,
+        workspace_id,
+        Entity::Collection,
+        collection_id,
+        Operation::Upsert,
+    )
+    .await?;
+    tx.commit().await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn reorder(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(workspace_id): Path<Uuid>,
+    Json(request): Json<Order>,
+) -> Result<StatusCode, AppError> {
+    authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
+    validate_order(&request)?;
+
+    let mut tx = state.db.begin().await?;
+    let updated = sqlx::query_scalar!(
+        "update collections c set position = (o.position - 1)::integer
+         from unnest($2::uuid[]) with ordinality as o(id, position)
+         where c.workspace_id = $1 and c.id = o.id
+         returning c.id",
+        workspace_id,
+        &request.ids,
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    for collection_id in updated {
+        changes::record(
+            &mut tx,
+            workspace_id,
+            Entity::Collection,
+            collection_id,
+            Operation::Upsert,
+        )
+        .await?;
+    }
+    tx.commit().await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn reorder_notes(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((workspace_id, collection_id)): Path<(Uuid, Uuid)>,
+    Json(request): Json<Order>,
+) -> Result<StatusCode, AppError> {
+    authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
+    validate_order(&request)?;
+
+    let mut tx = state.db.begin().await?;
+    sqlx::query!(
+        "update collection_notes cn set position = (o.position - 1)::integer
+         from unnest($3::uuid[]) with ordinality as o(note_id, position)
+         where cn.workspace_id = $1 and cn.collection_id = $2 and cn.note_id = o.note_id",
+        workspace_id,
+        collection_id,
+        &request.ids,
     )
     .execute(&mut *tx)
     .await?;

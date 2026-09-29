@@ -17,7 +17,7 @@ export function listCollections(token: string, workspaceId: string) {
 export function createCollectionRecord(
   token: string,
   workspaceId: string,
-  body: { id: string; parentId: string | null; encryptedName: string },
+  body: { id: string; parentId: string | null; encryptedName: string; position: number },
 ) {
   return apiRequest<void>(`/workspaces/${workspaceId}/collections`, {
     method: "POST",
@@ -68,4 +68,25 @@ export function removeNoteFromCollectionRecord(
     `/workspaces/${workspaceId}/collections/${collectionId}/notes/${noteId}`,
     { method: "DELETE", token },
   );
+}
+
+export function reorderCollectionRecords(token: string, workspaceId: string, ids: string[]) {
+  return apiRequest<void>(`/workspaces/${workspaceId}/collections/order`, {
+    method: "PUT",
+    token,
+    body: { ids },
+  });
+}
+
+export function reorderCollectionNoteRecords(
+  token: string,
+  workspaceId: string,
+  collectionId: string,
+  noteIds: string[],
+) {
+  return apiRequest<void>(`/workspaces/${workspaceId}/collections/${collectionId}/notes`, {
+    method: "PUT",
+    token,
+    body: { ids: noteIds },
+  });
 }

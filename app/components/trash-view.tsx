@@ -1,3 +1,4 @@
+import { EmptyTrashButton } from "~/components/empty-trash-button";
 import { PageHeader } from "~/components/page-header";
 import { TrashItem } from "~/components/trash-item";
 import type { Note } from "~/lib/vault/types";
@@ -9,7 +10,11 @@ type TrashViewProps = {
 export function TrashView({ notes }: TrashViewProps) {
   return (
     <>
-      <PageHeader />
+      <PageHeader
+        actions={
+          notes.length > 0 && <EmptyTrashButton count={notes.length} />
+        }
+      />
       <section className="mx-auto max-w-3xl px-12 pt-2 pb-8">
         <h1 className="text-3xl font-bold tracking-tight">Trash</h1>
         {notes.length === 0 ? (

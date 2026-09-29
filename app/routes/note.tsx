@@ -45,14 +45,9 @@ export async function clientAction({ params, request }: Route.ClientActionArgs) 
     case "duplicate":
       await duplicateNote(vault, noteId);
       return null;
-    case "add-to-collection": {
+    case "add-to-collection":
       await addNoteToCollection(vault, String(formData.get("collectionId")), noteId);
-      const fromCollectionId = formData.get("fromCollectionId");
-      if (fromCollectionId) {
-        await removeNoteFromCollection(vault, String(fromCollectionId), noteId);
-      }
       return null;
-    }
     case "remove-from-collection":
       await removeNoteFromCollection(vault, String(formData.get("collectionId")), noteId);
       return null;

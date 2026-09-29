@@ -1,7 +1,10 @@
 mod handlers;
 pub mod model;
 
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{delete, get},
+};
 
 use crate::state::AppState;
 
@@ -16,5 +19,9 @@ pub fn routes() -> Router<AppState> {
             get(handlers::get_one)
                 .patch(handlers::update)
                 .delete(handlers::delete),
+        )
+        .route(
+            "/workspaces/{workspace_id}/trash",
+            delete(handlers::empty_trash),
         )
 }

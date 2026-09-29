@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  type DropZone,
   getSidebarDrag,
   setSidebarDrag,
   type SidebarDragItem,
@@ -11,8 +12,9 @@ const claimedEvents = new WeakSet<Event>();
 
 type SidebarDropTargetOptions = {
   claims: (item: SidebarDragItem) => boolean;
-  canDrop: (item: SidebarDragItem) => boolean;
-  onDrop: (item: SidebarDragItem) => void;
+  getZone?: (event: React.DragEvent, item: SidebarDragItem) => DropZone;
+  canDrop: (item: SidebarDragItem, zone: DropZone) => boolean;
+  onDrop: (item: SidebarDragItem, zone: DropZone) => void;
 };
 
 export type SidebarDropTargetProps = ReturnType<
@@ -21,10 +23,11 @@ export type SidebarDropTargetProps = ReturnType<
 
 export function useSidebarDropTarget({
   claims,
+  getZone = () => "inside",
   canDrop,
   onDrop,
 }: SidebarDropTargetOptions) {
-  const [isOver, setIsOver] = useState(false);
+  const [overZone, setOverZone] = useState<DropZone | null>(null);
 
   function resolve(event: React.DragEvent) {
     const item = getSidebarDrag();
@@ -32,31 +35,33 @@ export function useSidebarDropTarget({
       return null;
     }
     claimedEvents.add(event.nativeEvent);
-    return canDrop(item) ? item : null;
+    const zone = getZone(event, item);
+    return canDrop(item, zone) ? { item, zone } : null;
   }
 
   return {
-    isOver,
+    isOver: overZone !== null,
+    overZone,
     dropTargetProps: {
       onDragOver(event: React.DragEvent) {
-        const item = resolve(event);
-        setIsOver(item !== null);
-        if (!item) return;
+        const target = resolve(event);
+        setOverZone(target?.zone ?? null);
+        if (!target) return;
         event.preventDefault();
         event.dataTransfer.dropEffect = "move";
       },
       onDragLeave(event: React.DragEvent) {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          setIsOver(false);
+          setOverZone(null);
         }
       },
       onDrop(event: React.DragEvent) {
-        const item = resolve(event);
-        setIsOver(false);
-        if (!item) return;
+        const target = resolve(event);
+        setOverZone(null);
+        if (!target) return;
         event.preventDefault();
         setSidebarDrag(null);
-        onDrop(item);
+        onDrop(target.item, target.zone);
       },
     },
   };
