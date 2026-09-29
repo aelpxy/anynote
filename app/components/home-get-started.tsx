@@ -13,7 +13,7 @@ export function HomeGetStarted() {
         <NewNoteButton />
         <NewCollectionButton />
       </div>
-      <p className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-neutral-500">
+      <p className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-neutral-500 dark:text-neutral-400">
         <span className="flex items-center gap-1.5">
           <Kbd keys={["Mod", "Alt", "N"]} /> new note
         </span>

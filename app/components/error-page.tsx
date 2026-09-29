@@ -21,7 +21,7 @@ export function ErrorPage({ error, fullScreen }: ErrorPageProps) {
       ].join(" ")}
     >
       {fullScreen && <Logo className="mb-6 size-9" />}
-      <p className="text-sm font-medium text-neutral-500 tabular-nums">{status}</p>
+      <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 tabular-nums">{status}</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">
         {isNotFound ? "Page not found" : "Something went wrong"}
       </h1>

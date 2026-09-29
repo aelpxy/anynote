@@ -87,7 +87,7 @@ export function NoteOutline({ editorRef }: NoteOutlineProps) {
                 "-ml-px block w-full truncate border-l py-0.5 pr-2 text-left text-xs transition-colors",
                 heading.id === activeId
                   ? "border-neutral-900 text-neutral-900 dark:border-neutral-100 dark:text-neutral-100"
-                  : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100",
+                  : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100",
               ].join(" ")}
             >
               {heading.text}

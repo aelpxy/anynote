@@ -1,4 +1,6 @@
 import {
+  ArrowDown,
+  ArrowUp,
   Copy,
   Folder,
   FolderMinus,
@@ -24,6 +26,8 @@ type NoteContextMenuItemsProps = {
   collectionId?: string;
   actions: NoteActions;
   onRename: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 };
 
 export function NoteContextMenuItems({
@@ -31,6 +35,8 @@ export function NoteContextMenuItems({
   collectionId,
   actions,
   onRename,
+  onMoveUp,
+  onMoveDown,
 }: NoteContextMenuItemsProps) {
   const layoutData = useRouteLoaderData<typeof clientLoader>("routes/sidebar-layout");
   const otherCollections = flattenCollections(
@@ -61,6 +67,16 @@ export function NoteContextMenuItems({
       <MenuItem icon={Link} onClick={copyLink}>
         Copy link
       </MenuItem>
+      {(onMoveUp || onMoveDown) && (
+        <>
+          <MenuItem icon={ArrowUp} disabled={!onMoveUp} onClick={onMoveUp}>
+            Move up
+          </MenuItem>
+          <MenuItem icon={ArrowDown} disabled={!onMoveDown} onClick={onMoveDown}>
+            Move down
+          </MenuItem>
+        </>
+      )}
       <MenuSeparator />
       <MenuSubmenu icon={FolderPlus} label="Add to collection">
         {otherCollections.length === 0 ? (

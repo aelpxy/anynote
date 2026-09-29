@@ -15,7 +15,7 @@ export function OfflineIndicator() {
       <CloudOff className="size-3.5" />
       Offline
       {pendingWrites > 0 && (
-        <span className="text-neutral-500 tabular-nums">· {pendingWrites} unsynced</span>
+        <span className="text-neutral-500 dark:text-neutral-400 tabular-nums">· {pendingWrites} unsynced</span>
       )}
     </span>
   );

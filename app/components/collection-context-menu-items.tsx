@@ -1,4 +1,12 @@
-import { Folder, FolderInput, FolderPlus, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Folder,
+  FolderInput,
+  FolderPlus,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useRouteLoaderData } from "react-router";
 
 import { MenuItem } from "~/components/menu-item";
@@ -14,6 +22,8 @@ type CollectionContextMenuItemsProps = {
   actions: CollectionActions;
   onRename: () => void;
   onCreateSubcollection: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 };
 
 export function CollectionContextMenuItems({
@@ -21,6 +31,8 @@ export function CollectionContextMenuItems({
   actions,
   onRename,
   onCreateSubcollection,
+  onMoveUp,
+  onMoveDown,
 }: CollectionContextMenuItemsProps) {
   const layoutData = useRouteLoaderData<typeof clientLoader>("routes/sidebar-layout");
   const excludedIds = new Set(
@@ -40,6 +52,16 @@ export function CollectionContextMenuItems({
       <MenuItem icon={FolderPlus} onClick={onCreateSubcollection}>
         New subcollection
       </MenuItem>
+      {(onMoveUp || onMoveDown) && (
+        <>
+          <MenuItem icon={ArrowUp} disabled={!onMoveUp} onClick={onMoveUp}>
+            Move up
+          </MenuItem>
+          <MenuItem icon={ArrowDown} disabled={!onMoveDown} onClick={onMoveDown}>
+            Move down
+          </MenuItem>
+        </>
+      )}
       <MenuSubmenu icon={FolderInput} label="Move to">
         <MenuItem
           icon={Folder}

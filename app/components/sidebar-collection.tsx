@@ -18,9 +18,10 @@ const expandDelayMs = 500;
 
 type SidebarCollectionProps = {
   collection: Collection;
+  siblings: Collection[];
 };
 
-export function SidebarCollection({ collection }: SidebarCollectionProps) {
+export function SidebarCollection({ collection, siblings }: SidebarCollectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const actions = useCollectionActions(collection.id, collection.parentId);
@@ -28,6 +29,9 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const name = actions.pendingName ?? collection.name;
   const noteCount = countCollectionNotes(collection);
+  const index = siblings.findIndex(({ id }) => id === collection.id);
+  const previous = siblings[index - 1];
+  const next = siblings[index + 1];
 
   const { overZone, dropTargetProps } = useSidebarDropTarget({
     claims: () => true,
@@ -109,6 +113,22 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
                   actions.createSubcollection();
                   setIsOpen(true);
                 }}
+                onMoveUp={
+                  previous &&
+                  (() =>
+                    arrangeActions.placeCollection(collection.id, {
+                      anchorId: previous.id,
+                      side: "before",
+                    }))
+                }
+                onMoveDown={
+                  next &&
+                  (() =>
+                    arrangeActions.placeCollection(collection.id, {
+                      anchorId: next.id,
+                      side: "after",
+                    }))
+                }
               />
             }
           >
@@ -132,7 +152,7 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
               // both clicks toggle, which cancels out, so the collection stays as it was
               onDoubleClick={() => setIsRenaming(true)}
               className={[
-                "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors",
+                "group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors pointer-coarse:py-2",
                 isOverInside
                   ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
                   : "text-neutral-700 hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100",
@@ -143,7 +163,7 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
                 {name}
               </span>
               {noteCount > 0 && (
-                <span className="text-xs text-neutral-500 tabular-nums group-hover/row:invisible pointer-coarse:invisible">
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums group-hover/row:invisible pointer-coarse:invisible">
                   {noteCount}
                 </span>
               )}
@@ -158,7 +178,11 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
       <Collapsible.Panel className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 ease-out motion-reduce:transition-none data-ending-style:h-0 data-starting-style:h-0">
         <div className="flex flex-col gap-0.5 pt-0.5 pl-4">
           {collection.children.map((child) => (
-            <SidebarCollection key={child.id} collection={child} />
+            <SidebarCollection
+              key={child.id}
+              collection={child}
+              siblings={collection.children}
+            />
           ))}
           {collection.notes.map((note) => (
             <SidebarNoteLink

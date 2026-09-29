@@ -16,8 +16,11 @@ export const shortcutGroups: ShortcutGroup[] = [
     shortcuts: [
       { keys: ["Mod", "K"], label: "Search and commands" },
       { keys: ["Mod", "S"], label: "Save now" },
+      { keys: ["Mod", "F"], label: "Find in note" },
+      { keys: ["Mod", "Shift", "F"], label: "Search all notes" },
       { keys: ["Mod", "Alt", "N"], label: "New note" },
       { keys: ["?"], label: "Keyboard shortcuts" },
+      { keys: ["Mod", "Z"], label: "Undo the last move or delete" },
     ],
   },
   {

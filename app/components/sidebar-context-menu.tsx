@@ -34,7 +34,7 @@ export function SidebarContextMenu({
         <Menu.Trigger
           aria-label={`${label} options`}
           className={[
-            "absolute top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-neutral-600 opacity-0 transition-[opacity,background-color] group-hover/row:opacity-100 hover:bg-neutral-300/70 hover:text-neutral-900 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-100",
+            "absolute top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded text-neutral-600 opacity-0 transition-[opacity,background-color] group-hover/row:opacity-100 hover:bg-neutral-300/70 hover:text-neutral-900 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-100",
             buttonPosition === "end" ? "right-1" : "right-6",
           ].join(" ")}
         >

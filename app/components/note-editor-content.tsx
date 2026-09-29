@@ -17,19 +17,23 @@ import { gfm } from "@milkdown/kit/preset/gfm";
 import type { EditorState } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import { Milkdown, useEditor } from "@milkdown/react";
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useMatch, useNavigate, useRouteLoaderData } from "react-router";
 
 import { EditorContextMenu } from "~/components/editor-context-menu";
 import { EditorToolbars } from "~/components/editor-toolbars";
+import { FindBar } from "~/components/find-bar";
 import { LinkHoverPreview } from "~/components/link-hover-preview";
+import { NoteLinkSuggest } from "~/components/note-link-suggest";
 import { autolinkPlugin } from "~/lib/autolink-plugin";
 import { codeBlockOptions } from "~/lib/code-block-options";
 import type { LinkRange } from "~/lib/editor-selection";
 import { createViewBridgePlugin } from "~/lib/editor-view-bridge-plugin";
 import { encryptedImageView } from "~/lib/encrypted-image-view";
 import { nullSafeImageSchema } from "~/lib/image-schema";
+import { findPlugin } from "~/lib/find-plugin";
 import { imagePastePlugin } from "~/lib/image-paste-plugin";
+import { createKeyInterceptPlugin, type KeyInterceptor } from "~/lib/key-intercept-plugin";
 import { imageUploader, uploadPlaceholder } from "~/lib/image-uploader";
 import {
   headingAnchorPlugin,
@@ -41,6 +45,7 @@ import { linkSanitizerPlugin } from "~/lib/link-sanitizer-plugin";
 import { placeholderPlugin } from "~/lib/placeholder-plugin";
 import { toSafeHref } from "~/lib/safe-url";
 import { taskListPlugin } from "~/lib/task-list-plugin";
+import type { clientLoader as layoutLoader } from "~/routes/sidebar-layout";
 
 type EditorSnapshot = {
   view: EditorView;
@@ -58,6 +63,11 @@ export function NoteEditorContent({
   onChange,
 }: NoteEditorContentProps) {
   const navigate = useNavigate();
+  const layoutData = useRouteLoaderData<typeof layoutLoader>("routes/sidebar-layout");
+  const currentNoteId = useMatch("/notes/:noteId")?.params.noteId;
+  const linkableNotes = (layoutData?.documents ?? []).filter(({ id }) => id !== currentNoteId);
+  const keyInterceptorRef = useRef<KeyInterceptor | null>(null);
+  const [find, setFind] = useState<{ initialQuery: string; focusRequest: number } | null>(null);
   const [snapshot, setSnapshot] = useState<EditorSnapshot | null>(null);
   const [editingLink, setEditingLink] = useState<LinkRange | null>(null);
   const onChangeRef = useRef(onChange);
@@ -107,6 +117,7 @@ export function NoteEditorContent({
               if (markdown !== previousMarkdown) onChangeRef.current(markdown);
             });
         })
+        .use(createKeyInterceptPlugin(keyInterceptorRef))
         .use(commonmark)
         .use(nullSafeImageSchema)
         .use(gfm)
@@ -124,6 +135,7 @@ export function NoteEditorContent({
         .use(encryptedImageView)
         .use(headingAnchorPlugin)
         .use(taskListPlugin)
+        .use(findPlugin)
         .use(placeholderPlugin)
         .use(createLinkClickPlugin(openLink))
         .use(linkSanitizerPlugin)
@@ -135,6 +147,28 @@ export function NoteEditorContent({
         .use(codeBlockComponent),
     [],
   );
+
+  const handleFindShortcut = useEffectEvent((event: KeyboardEvent) => {
+    const isMod = event.metaKey || event.ctrlKey;
+    if (!isMod || event.altKey || event.shiftKey || event.key.toLowerCase() !== "f") return;
+    const view = snapshot?.view;
+    if (!view) return;
+    event.preventDefault();
+
+    const { from, to, empty } = view.state.selection;
+    const selected = empty ? "" : view.state.doc.textBetween(from, to, " ");
+    const initialQuery = selected.includes("\n") ? "" : selected.slice(0, 100);
+    setFind((open) => ({
+      initialQuery: open?.initialQuery ?? initialQuery,
+      focusRequest: (open?.focusRequest ?? 0) + 1,
+    }));
+  });
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => handleFindShortcut(event);
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
 
   useEffect(() => {
     // headings only exist after the editor mounts, so the browser's native hash scroll misses them
@@ -164,6 +198,21 @@ export function NoteEditorContent({
             onOpenLink={openLink}
           />
           <LinkHoverPreview root={snapshot.view.dom} onOpen={openLink} />
+          {find && (
+            <FindBar
+              view={snapshot.view}
+              state={snapshot.state}
+              initialQuery={find.initialQuery}
+              focusRequest={find.focusRequest}
+              onClose={() => setFind(null)}
+            />
+          )}
+          <NoteLinkSuggest
+            view={snapshot.view}
+            state={snapshot.state}
+            notes={linkableNotes}
+            interceptorRef={keyInterceptorRef}
+          />
         </>
       )}
     </>

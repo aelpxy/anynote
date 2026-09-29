@@ -30,7 +30,15 @@ export type CollectionOption = {
 export type NoteSearchResult = {
   id: string;
   title: string;
+  icon?: string;
   snippet: string;
+  updatedAt: string;
+};
+
+export type SearchFilters = {
+  collectionId: string | null;
+  favoritesOnly: boolean;
+  edited: "any" | "week" | "month";
 };
 
 export type NoteContent = {

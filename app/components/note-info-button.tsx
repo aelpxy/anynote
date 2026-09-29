@@ -57,7 +57,7 @@ export function NoteInfoButton({ note, markdown }: NoteInfoButtonProps) {
             <div className="mt-2 border-t border-neutral-200 pt-2 dark:border-neutral-700">
               <p className="py-1 text-neutral-600 dark:text-neutral-400">Collections</p>
               {collections.length === 0 ? (
-                <p className="py-1 text-neutral-500">None</p>
+                <p className="py-1 text-neutral-500 dark:text-neutral-400">None</p>
               ) : (
                 <ul>
                   {collections.map(({ collection, label }) => (
@@ -65,7 +65,7 @@ export function NoteInfoButton({ note, markdown }: NoteInfoButtonProps) {
                       key={collection.id}
                       className="flex items-center gap-2 py-1 text-neutral-900 dark:text-neutral-100"
                     >
-                      <Folder className="size-4 shrink-0 text-neutral-500" />
+                      <Folder className="size-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
                       <span className="truncate">{label}</span>
                     </li>
                   ))}

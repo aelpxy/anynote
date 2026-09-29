@@ -30,6 +30,8 @@ export function useAppShortcuts(documents: Note[]) {
     // notes save on their own; this only keeps the browser's "save page" dialog away and saves right now
     if (isMod && !event.altKey && event.key.toLowerCase() === "s") {
       action = () => window.dispatchEvent(new Event(saveNowEvent));
+    } else if (isMod && event.shiftKey && !event.altKey && event.key.toLowerCase() === "f") {
+      action = () => navigate("/search");
     } else if (isMod && !event.altKey && event.key === "\\") action = toggleSidebar;
     else if (isMod && !event.altKey && event.key === ".") action = toggleFocusMode;
     else if (isMod && event.altKey && event.code === "KeyN") {

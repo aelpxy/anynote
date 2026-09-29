@@ -62,6 +62,22 @@ export function SidebarNoteLink({
       ? openNote.noteId
       : undefined;
 
+  const index = siblings.findIndex(({ id }) => id === note.id);
+  const previous = siblings[index - 1];
+  const next = siblings[index + 1];
+
+  function moveNextTo(anchor: Note, side: "before" | "after") {
+    const placement = { anchorId: anchor.id, side };
+    if (collectionId) {
+      arrangeActions.addToCollection([note.id], collectionId, {
+        placement,
+        fromCollectionId: collectionId,
+      });
+    } else {
+      arrangeActions.placeNotes([note.id], { placement });
+    }
+  }
+
   const { overZone, dropTargetProps } = useSidebarDropTarget({
     claims: (item) => item.kind === "notes",
     getZone: (event) => getRowZone(event, rowRef.current, false),
@@ -117,6 +133,8 @@ export function SidebarNoteLink({
               collectionId={collectionId}
               actions={actions}
               onRename={() => setIsRenaming(true)}
+              onMoveUp={previous && (() => moveNextTo(previous, "before"))}
+              onMoveDown={next && (() => moveNextTo(next, "after"))}
             />
           )
         }

@@ -15,8 +15,8 @@ export function TrashView({ notes }: TrashViewProps) {
           notes.length > 0 && <EmptyTrashButton count={notes.length} />
         }
       />
-      <section className="mx-auto max-w-3xl px-12 pt-2 pb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Trash</h1>
+      <section className="mx-auto max-w-3xl px-5 pt-2 pb-8 sm:px-12">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Trash</h1>
         {notes.length === 0 ? (
           <p className="mt-6 text-sm text-neutral-600 dark:text-neutral-400">
             Trash is empty.

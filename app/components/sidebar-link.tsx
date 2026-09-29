@@ -41,7 +41,7 @@ export function SidebarLink({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={[
-        "flex items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors group-hover/row:pr-7 pointer-coarse:pr-7",
+        "flex items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors pointer-coarse:py-2 group-hover/row:pr-7 pointer-coarse:pr-7",
         isActive
           ? "bg-neutral-200 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
           : isHighlighted

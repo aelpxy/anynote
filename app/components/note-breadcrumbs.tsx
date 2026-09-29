@@ -26,7 +26,7 @@ export function NoteBreadcrumbs({ title }: NoteBreadcrumbsProps) {
 
   return (
     <nav aria-label="Breadcrumb" className="min-w-0">
-      <ol className="flex min-w-0 items-center gap-1 text-sm text-neutral-500">
+      <ol className="flex min-w-0 items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400">
         {crumbs.map((crumb, index) => (
           <li key={index} className="flex min-w-0 items-center gap-1">
             {index > 0 && (

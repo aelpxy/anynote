@@ -106,3 +106,10 @@ export function countCollectionNotes(collection: Collection) {
   visit(collection);
   return noteIds.size;
 }
+
+export function getBacklinks(vault: Vault, noteId: string) {
+  const path = `/notes/${noteId}`;
+  return getActiveNotes(vault)
+    .filter((note) => note.id !== noteId && note.content.includes(path))
+    .map(toNote);
+}

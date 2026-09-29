@@ -20,6 +20,7 @@ type SidebarProps = {
   documents: Note[];
   collections: Collection[];
   width: number;
+  isDrawer?: boolean;
   onSearch: () => void;
 };
 
@@ -28,6 +29,7 @@ export function Sidebar({
   documents,
   collections,
   width,
+  isDrawer = false,
   onSearch,
 }: SidebarProps) {
   const dropTargets = useSidebarDropTargets();
@@ -43,17 +45,19 @@ export function Sidebar({
 
   return (
     <motion.aside
-      initial={{ width: 0 }}
+      initial={isDrawer ? false : { width: 0 }}
       animate={{ width }}
-      exit={{ width: 0 }}
+      exit={isDrawer ? undefined : { width: 0 }}
       transition={
         isResizing
           ? { duration: 0 }
           : { duration: 0.2, ease: [0.215, 0.61, 0.355, 1] }
       }
-      className="relative shrink-0 overflow-hidden print:hidden"
+      className="relative h-full shrink-0 overflow-hidden print:hidden"
     >
-      <SidebarResizeHandle width={width} onResizingChange={setIsResizing} />
+      {!isDrawer && (
+        <SidebarResizeHandle width={width} onResizingChange={setIsResizing} />
+      )}
       <div className="h-full py-2 pl-2" style={{ width }}>
         <div className="flex h-full flex-col rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
           <div className="h-12 shrink-0" />
@@ -118,6 +122,7 @@ export function Sidebar({
                 <SidebarCollection
                   key={collection.id}
                   collection={collection}
+                  siblings={collections}
                 />
               ))}
             </SidebarSection>

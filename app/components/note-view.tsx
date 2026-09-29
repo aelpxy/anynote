@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { ExportMenu } from "~/components/export-menu";
 import { MoveToTrashButton } from "~/components/move-to-trash-button";
+import { NoteBacklinks } from "~/components/note-backlinks";
 import { NoteBreadcrumbs } from "~/components/note-breadcrumbs";
 import { NoteEditor } from "~/components/note-editor";
 import { NoteIconPicker } from "~/components/note-icon-picker";
@@ -15,13 +16,14 @@ import { useDebouncedCallback } from "~/hooks/use-debounced-callback";
 import { useNoteActions } from "~/hooks/use-note-actions";
 import { usePageFileDrop } from "~/hooks/use-page-file-drop";
 import { saveNowEvent } from "~/lib/ui/shortcuts";
-import type { NoteWithContent } from "~/lib/vault/types";
+import type { Note, NoteWithContent } from "~/lib/vault/types";
 
 type NoteViewProps = {
   note: NoteWithContent;
+  backlinks: Note[];
 };
 
-export function NoteView({ note }: NoteViewProps) {
+export function NoteView({ note, backlinks }: NoteViewProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const latestContentRef = useRef(note.content);
   const [markdown, setMarkdown] = useState(note.content);
@@ -78,7 +80,8 @@ export function NoteView({ note }: NoteViewProps) {
           </>
         }
       />
-      <article className="mx-auto max-w-(--note-page-width) px-12 pt-2">
+      <h1 className="sr-only">{note.title}</h1>
+      <article className="mx-auto max-w-(--note-page-width) px-5 pt-2 pb-[30vh] sm:px-12 print:pb-0">
         <div className="group/title">
           <NoteIconPicker icon={note.icon} onChange={actions.setIcon} />
           <NoteTitleInput note={note} onContinue={focusEditor} />
@@ -90,6 +93,7 @@ export function NoteView({ note }: NoteViewProps) {
             onChange={handleContentChange}
           />
         </div>
+        <NoteBacklinks notes={backlinks} />
       </article>
       <NoteOutline editorRef={editorRef} />
     </>

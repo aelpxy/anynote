@@ -1,3 +1,5 @@
+import { handleRadioGroupKeyDown } from "~/lib/ui/radio-group";
+
 type SegmentedControlProps<Value extends string> = {
   label: string;
   value: Value;
@@ -17,6 +19,9 @@ export function SegmentedControl<Value extends string>({
       <div
         role="radiogroup"
         aria-label={label}
+        onKeyDown={(event) =>
+          handleRadioGroupKeyDown(event, options.map((option) => option.value), value, onChange)
+        }
         className="flex rounded-md border border-neutral-300 p-0.5 dark:border-neutral-700"
       >
         {options.map((option) => (
@@ -25,6 +30,7 @@ export function SegmentedControl<Value extends string>({
             type="button"
             role="radio"
             aria-checked={value === option.value}
+            tabIndex={value === option.value ? 0 : -1}
             onClick={() => onChange(option.value)}
             className="rounded px-2.5 py-1 text-xs text-neutral-600 transition-colors hover:text-neutral-900 aria-checked:bg-neutral-900 aria-checked:font-medium aria-checked:text-white dark:text-neutral-400 dark:hover:text-neutral-100 dark:aria-checked:bg-neutral-100 dark:aria-checked:text-neutral-900"
           >

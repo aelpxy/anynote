@@ -12,16 +12,17 @@ import {
   setNoteTrashed,
   updateNote,
 } from "~/lib/vault/note-mutations";
-import { getNote } from "~/lib/vault/queries";
+import { getBacklinks, getNote } from "~/lib/vault/queries";
 import { runInBackground } from "~/lib/vault/background";
 import { requireVault } from "~/lib/vault/require-vault";
 
 export async function clientLoader({ params, request }: Route.ClientLoaderArgs) {
-  const note = getNote(await requireVault(request), params.noteId);
+  const vault = await requireVault(request);
+  const note = getNote(vault, params.noteId);
   if (!note) {
     throw data("Note not found", { status: 404 });
   }
-  return { note };
+  return { note, backlinks: getBacklinks(vault, note.id) };
 }
 
 const maxIconLength = 16;
@@ -78,8 +79,8 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 
 export default function NoteRoute({ loaderData }: Route.ComponentProps) {
-  const { note } = loaderData;
-  return <NoteView key={`${note.id}:${note.revision}`} note={note} />;
+  const { note, backlinks } = loaderData;
+  return <NoteView key={`${note.id}:${note.revision}`} note={note} backlinks={backlinks} />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

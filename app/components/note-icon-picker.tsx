@@ -16,7 +16,7 @@ export function NoteIconPicker({ icon, onChange }: NoteIconPickerProps) {
         className={
           icon
             ? "-ml-1 rounded-lg px-1 text-5xl leading-tight transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900"
-            : "flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-neutral-500 opacity-0 transition-[opacity,background-color] group-hover/title:opacity-100 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:opacity-100 data-popup-open:opacity-100 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
+            : "flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-neutral-500 dark:text-neutral-400 opacity-0 transition-[opacity,background-color] group-hover/title:opacity-100 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
         }
       >
         {icon ?? (

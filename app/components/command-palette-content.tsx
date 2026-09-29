@@ -53,7 +53,7 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
   const terms = query.trim().split(/\s+/).filter(Boolean);
 
   useEffect(() => {
-    void load(`/search?q=${encodeURIComponent(query)}`);
+    void load(`/search?q=${encodeURIComponent(query)}&limit=${query.trim() ? 20 : 8}`);
   }, [query, load]);
 
   const commandGroups: PaletteCommandGroup[] = [
@@ -94,6 +94,12 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
           label: "Home",
           icon: Home,
           run: () => navigate("/"),
+        },
+        {
+          id: "search",
+          label: "Search all notes",
+          icon: Search,
+          run: () => navigate(query.trim() ? `/search?q=${encodeURIComponent(query.trim())}` : "/search"),
         },
         {
           id: "trash",
@@ -216,6 +222,19 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
                 onSelect={() => run(() => navigate(`/notes/${result.id}`))}
               />
             ))}
+          </Command.Group>
+        )}
+        {query.trim() && (
+          <Command.Group heading="Search">
+            <CommandPaletteItem
+              value="command:search-all"
+              icon={Search}
+              onSelect={() =>
+                run(() => navigate(`/search?q=${encodeURIComponent(query.trim())}`))
+              }
+            >
+              Search all notes for “{query.trim()}”
+            </CommandPaletteItem>
           </Command.Group>
         )}
         {matchingGroups.map((group) => (

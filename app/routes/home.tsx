@@ -20,7 +20,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PageHeader />
-      <div className="mx-auto max-w-3xl px-12 pt-2 pb-8">
+      <div className="mx-auto max-w-3xl px-5 pt-2 pb-8 sm:px-12">
         {recentNotes.length === 0 ? (
           <HomeGetStarted />
         ) : (

@@ -59,14 +59,14 @@ img.ProseMirror-separator {
 .note-editor .ProseMirror {
   font-size: var(--note-text-size);
   line-height: var(--note-line-height);
-  @apply min-h-[60vh] pb-[30vh] text-neutral-800 caret-neutral-900 outline-none selection:bg-neutral-300 dark:text-neutral-200 dark:caret-neutral-100 dark:selection:bg-neutral-700;
+  @apply min-h-[40vh] pb-8 text-neutral-800 caret-neutral-900 outline-none selection:bg-neutral-300 dark:text-neutral-200 dark:caret-neutral-100 dark:selection:bg-neutral-700;
 
   & .ProseMirror-selectednode {
     @apply rounded-sm outline-2 outline-offset-2 outline-neutral-400 dark:outline-neutral-600;
   }
 
   & p.is-empty:first-child::before {
-    @apply pointer-events-none float-left h-0 text-neutral-400 content-[attr(data-placeholder)] dark:text-neutral-600;
+    @apply pointer-events-none float-left h-0 text-neutral-500 content-[attr(data-placeholder)] dark:text-neutral-400;
   }
 
   & > * + * {
@@ -87,7 +87,7 @@ img.ProseMirror-separator {
   }
 
   & .heading-anchor {
-    @apply absolute top-0 -left-6 w-5 text-center font-normal text-neutral-400 no-underline opacity-0 transition-opacity duration-150 select-none hover:text-neutral-700 focus-visible:opacity-100 motion-reduce:transition-none dark:text-neutral-600 dark:hover:text-neutral-300;
+    @apply absolute top-0 -left-6 w-5 text-center font-normal text-neutral-500 no-underline opacity-0 transition-opacity duration-150 select-none hover:text-neutral-700 focus-visible:opacity-100 motion-reduce:transition-none dark:text-neutral-400 dark:hover:text-neutral-300;
   }
 
   /* em so headings scale with the text size setting */
@@ -107,6 +107,18 @@ img.ProseMirror-separator {
     @apply text-neutral-900 underline decoration-neutral-400 underline-offset-2 dark:text-neutral-100 dark:decoration-neutral-600;
   }
 
+  & .find-match {
+    @apply rounded-sm bg-neutral-200 dark:bg-neutral-700;
+  }
+
+  & .find-match-current {
+    @apply bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900;
+  }
+
+  & a[href^="/notes/"] {
+    @apply decoration-dashed;
+  }
+
   & strong {
     @apply font-semibold text-neutral-900 dark:text-neutral-100;
   }
@@ -120,7 +132,7 @@ img.ProseMirror-separator {
   }
 
   & li::marker {
-    @apply text-neutral-400 dark:text-neutral-500;
+    @apply text-neutral-500;
   }
 
   & li > * + * {

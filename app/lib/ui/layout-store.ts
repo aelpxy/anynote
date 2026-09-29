@@ -43,6 +43,10 @@ export function subscribeToLayout(listener: () => void) {
   };
 }
 
+export function setSidebarOpen(isSidebarOpen: boolean) {
+  update({ isSidebarOpen });
+}
+
 export function toggleSidebar() {
   update({ isSidebarOpen: !state.isSidebarOpen, isFocusMode: false });
 }

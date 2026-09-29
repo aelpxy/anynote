@@ -13,7 +13,7 @@ export function HomeRecentNotes({ notes }: HomeRecentNotesProps) {
   return (
     <section>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Recent</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Recent</h1>
         <NewNoteButton />
       </div>
       <ul className="mt-6 flex flex-col gap-0.5">
@@ -34,10 +34,10 @@ export function HomeRecentNotes({ notes }: HomeRecentNotesProps) {
               {note.isFavorite && (
                 <Star
                   aria-label="Favorite"
-                  className="size-3.5 shrink-0 text-neutral-500"
+                  className="size-3.5 shrink-0 text-neutral-500 dark:text-neutral-400"
                 />
               )}
-              <span className="shrink-0 text-xs text-neutral-600 dark:text-neutral-400">
+              <span className="hidden shrink-0 text-xs text-neutral-600 sm:inline dark:text-neutral-400">
                 Edited {formatRelativeTime(note.updatedAt)}
               </span>
             </Link>
