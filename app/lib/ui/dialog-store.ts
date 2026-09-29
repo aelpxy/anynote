@@ -1,4 +1,4 @@
-export type AppDialog = "account" | "settings" | "create-workspace";
+export type AppDialog = "account" | "settings" | "create-workspace" | "shortcuts";
 
 let openDialog: AppDialog | null = null;
 const listeners = new Set<() => void>();

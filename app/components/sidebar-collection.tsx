@@ -23,7 +23,7 @@ type SidebarCollectionProps = {
 export function SidebarCollection({ collection }: SidebarCollectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
-  const actions = useCollectionActions(collection.id);
+  const actions = useCollectionActions(collection.id, collection.parentId);
   const arrangeActions = useArrangeActions();
   const rowRef = useRef<HTMLDivElement>(null);
   const name = actions.pendingName ?? collection.name;
@@ -55,7 +55,11 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
           fromCollectionId: item.collectionId,
         });
       } else if (zone === "inside") {
-        arrangeActions.moveCollection(item.collectionId, collection.id);
+        arrangeActions.moveCollection(
+          item.collectionId,
+          collection.id,
+          item.parentId,
+        );
       } else {
         arrangeActions.placeCollection(item.collectionId, {
           anchorId: collection.id,
@@ -94,6 +98,8 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
           />
         ) : (
           <SidebarContextMenu
+            label={name}
+            buttonPosition="before-chevron"
             menu={
               <CollectionContextMenuItems
                 collection={collection}
@@ -131,9 +137,11 @@ export function SidebarCollection({ collection }: SidebarCollectionProps) {
               ].join(" ")}
             >
               <Folder className="size-4 shrink-0" />
-              <span className="flex-1 truncate text-left">{name}</span>
+              <span className="flex-1 truncate text-left group-hover/row:pr-5 pointer-coarse:pr-5">
+                {name}
+              </span>
               {noteCount > 0 && (
-                <span className="text-xs text-neutral-500 tabular-nums">
+                <span className="text-xs text-neutral-500 tabular-nums group-hover/row:invisible pointer-coarse:invisible">
                   {noteCount}
                 </span>
               )}

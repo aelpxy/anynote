@@ -3,6 +3,11 @@ import { listCollections } from "~/lib/api/collections";
 import { ApiError } from "~/lib/api/client";
 import { getNoteRecord } from "~/lib/api/notes";
 import { decryptCollection, decryptNote } from "~/lib/vault/codec";
+import {
+  hasPendingCollectionWrites,
+  markCollectionsStale,
+  takeCollectionsStale,
+} from "~/lib/vault/collection-writes";
 import { decryptAll } from "~/lib/vault/load";
 import { isPending } from "~/lib/vault/queue";
 import type { Vault } from "~/lib/vault/types";
@@ -38,6 +43,11 @@ export async function syncVault(vault: Vault) {
   let changed = false;
   let hasMore = true;
 
+  if (!hasPendingCollectionWrites() && takeCollectionsStale()) {
+    await reloadCollections(vault);
+    changed = true;
+  }
+
   while (hasMore) {
     const page = await listChanges(vault.token, vault.workspaceId, vault.cursor);
     const latestByNote = new Map<string, "upsert" | "delete">();
@@ -50,7 +60,9 @@ export async function syncVault(vault: Vault) {
     for (const [noteId, operation] of latestByNote) {
       if (await applyNoteChange(vault, noteId, operation)) changed = true;
     }
-    if (collectionsChanged) {
+    if (collectionsChanged && hasPendingCollectionWrites()) {
+      markCollectionsStale();
+    } else if (collectionsChanged) {
       await reloadCollections(vault);
       changed = true;
     }

@@ -10,6 +10,13 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo,
     monospace;
+  --animate-appear-delayed: appear 200ms ease-out 200ms both;
+
+  @keyframes appear {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
 html,

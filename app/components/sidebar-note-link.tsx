@@ -103,6 +103,7 @@ export function SidebarNoteLink({
   return (
     <div ref={rowRef} className="relative" {...dropTargetProps}>
       <SidebarContextMenu
+        label={title}
         menu={
           isMultiSelected ? (
             <BulkNoteContextMenuItems
@@ -123,6 +124,7 @@ export function SidebarNoteLink({
         <SidebarLink
           to={to}
           icon={FileText}
+          emoji={note.icon}
           state={selection.state}
           isSelected={selection.isSelected}
           isHighlighted={isMultiSelected}

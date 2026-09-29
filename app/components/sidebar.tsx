@@ -1,12 +1,13 @@
 import { Trash2 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { SidebarAddButton } from "~/components/sidebar-add-button";
 import { SidebarCollection } from "~/components/sidebar-collection";
 import { SidebarEmptyState } from "~/components/sidebar-empty-state";
 import { SidebarLink } from "~/components/sidebar-link";
 import { SidebarNoteLink } from "~/components/sidebar-note-link";
+import { SidebarResizeHandle } from "~/components/sidebar-resize-handle";
 import { SidebarSearchButton } from "~/components/sidebar-search-button";
 import { SidebarSection } from "~/components/sidebar-section";
 import { WorkspaceMenu } from "~/components/workspace-menu";
@@ -18,6 +19,7 @@ type SidebarProps = {
   favorites: Note[];
   documents: Note[];
   collections: Collection[];
+  width: number;
   onSearch: () => void;
 };
 
@@ -25,9 +27,11 @@ export function Sidebar({
   favorites,
   documents,
   collections,
+  width,
   onSearch,
 }: SidebarProps) {
   const dropTargets = useSidebarDropTargets();
+  const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -40,12 +44,17 @@ export function Sidebar({
   return (
     <motion.aside
       initial={{ width: 0 }}
-      animate={{ width: "14rem" }}
+      animate={{ width }}
       exit={{ width: 0 }}
-      transition={{ duration: 0.2, ease: [0.215, 0.61, 0.355, 1] }}
-      className="shrink-0 overflow-hidden print:hidden"
+      transition={
+        isResizing
+          ? { duration: 0 }
+          : { duration: 0.2, ease: [0.215, 0.61, 0.355, 1] }
+      }
+      className="relative shrink-0 overflow-hidden print:hidden"
     >
-      <div className="h-full w-56 py-2 pl-2">
+      <SidebarResizeHandle width={width} onResizingChange={setIsResizing} />
+      <div className="h-full py-2 pl-2" style={{ width }}>
         <div className="flex h-full flex-col rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
           <div className="h-12 shrink-0" />
           <div className="flex flex-col gap-3 px-1.5">

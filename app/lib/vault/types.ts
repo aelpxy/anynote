@@ -1,6 +1,7 @@
 export type Note = {
   id: string;
   title: string;
+  icon?: string;
   isFavorite: boolean;
   isTrashed: boolean;
 };
@@ -36,6 +37,7 @@ export type NoteContent = {
   isFavorite: boolean;
   // sort key for the document list; notes without one sort by creation time
   position?: number;
+  icon?: string;
 };
 
 export type VaultNote = NoteContent & {

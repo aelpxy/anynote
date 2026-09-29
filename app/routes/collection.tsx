@@ -7,6 +7,7 @@ import {
   placeCollection,
   renameCollection,
 } from "~/lib/vault/collection-mutations";
+import { runInBackground } from "~/lib/vault/background";
 import { readPlacement } from "~/lib/vault/placement";
 import { requireVault } from "~/lib/vault/require-vault";
 
@@ -18,21 +19,21 @@ export async function clientAction({ params, request }: Route.ClientActionArgs) 
   switch (formData.get("intent")) {
     case "rename": {
       const name = String(formData.get("name")).trim();
-      if (name) await renameCollection(vault, collectionId, name);
+      if (name) runInBackground(renameCollection(vault, collectionId, name));
       return null;
     }
     case "move": {
       const placement = readPlacement(formData);
       const parentId = formData.get("parentId");
-      if (placement) {
-        await placeCollection(vault, collectionId, placement);
-      } else {
-        await moveCollection(vault, collectionId, parentId ? String(parentId) : null);
-      }
+      runInBackground(
+        placement
+          ? placeCollection(vault, collectionId, placement)
+          : moveCollection(vault, collectionId, parentId ? String(parentId) : null),
+      );
       return null;
     }
     case "delete":
-      await deleteCollection(vault, collectionId);
+      runInBackground(deleteCollection(vault, collectionId));
       return null;
     default:
       throw data("Invalid intent", { status: 400 });

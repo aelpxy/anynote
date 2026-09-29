@@ -25,6 +25,7 @@ export async function decryptNote(keys: Keys, record: NoteRecord): Promise<Vault
     content: content.content,
     isFavorite: content.isFavorite,
     position: content.position,
+    icon: content.icon,
     version: record.version,
     trashedAt: record.trashedAt,
     createdAt: record.createdAt,

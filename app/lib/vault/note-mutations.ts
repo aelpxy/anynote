@@ -58,6 +58,7 @@ export async function createNote(vault: Vault, content: Partial<NoteContent> = {
     title: content.title ?? "Untitled",
     content: content.content ?? "",
     isFavorite: content.isFavorite ?? false,
+    icon: content.icon,
   };
 
   const record = await createNoteRecord(vault.token, vault.workspaceId, {
@@ -83,50 +84,53 @@ export function updateNote(vault: Vault, noteId: string, changes: Partial<NoteCo
   vault.notes.set(noteId, { ...note, ...changes });
 
   return enqueue(noteId, () => {
-    const { title, content, isFavorite, position } = requireNote(vault, noteId);
-    return patchNote(vault, noteId, { content: { title, content, isFavorite, position } });
+    const { title, content, isFavorite, position, icon } = requireNote(vault, noteId);
+    return patchNote(vault, noteId, { content: { title, content, isFavorite, position, icon } });
   });
 }
 
 export function setNoteTrashed(vault: Vault, noteId: string, trashed: boolean) {
+  const note = requireNote(vault, noteId);
+  vault.notes.set(noteId, {
+    ...note,
+    trashedAt: trashed ? (note.trashedAt ?? new Date().toISOString()) : null,
+  });
   return enqueue(noteId, () => patchNote(vault, noteId, { trashed }));
 }
 
+function forgetNote(vault: Vault, noteId: string) {
+  vault.notes.delete(noteId);
+  for (const collection of vault.collections.values()) {
+    collection.noteIds = collection.noteIds.filter((id) => id !== noteId);
+  }
+}
+
 export function deleteNote(vault: Vault, noteId: string) {
-  return enqueue(noteId, async () => {
-    await deleteNoteRecord(vault.token, vault.workspaceId, noteId);
-    vault.notes.delete(noteId);
-    for (const collection of vault.collections.values()) {
-      collection.noteIds = collection.noteIds.filter((id) => id !== noteId);
-    }
-  });
+  forgetNote(vault, noteId);
+  return enqueue(noteId, () => deleteNoteRecord(vault.token, vault.workspaceId, noteId));
 }
 
 export function duplicateNote(vault: Vault, noteId: string) {
-  const { title, content } = requireNote(vault, noteId);
-  return createNote(vault, { title: `${title} copy`, content });
+  const { title, content, icon } = requireNote(vault, noteId);
+  return createNote(vault, { title: `${title} copy`, content, icon });
 }
 
-export async function emptyTrash(vault: Vault) {
-  await emptyTrashRecords(vault.token, vault.workspaceId);
+export function emptyTrash(vault: Vault) {
   for (const note of [...vault.notes.values()]) {
-    if (note.trashedAt === null) continue;
-    vault.notes.delete(note.id);
-    for (const collection of vault.collections.values()) {
-      collection.noteIds = collection.noteIds.filter((id) => id !== note.id);
-    }
+    if (note.trashedAt !== null) forgetNote(vault, note.id);
   }
+  return emptyTrashRecords(vault.token, vault.workspaceId);
 }
 
 const positionGap = 1024;
 
-export async function placeNotes(vault: Vault, noteIds: string[], placement: Placement) {
+export function placeNotes(vault: Vault, noteIds: string[], placement: Placement) {
   const moving = new Set(noteIds);
   const active = getActiveNotes(vault);
   const moved = active.filter((note) => moving.has(note.id));
   const rest = active.filter((note) => !moving.has(note.id));
   const anchorIndex = rest.findIndex((note) => note.id === placement.anchorId);
-  if (anchorIndex === -1 || moved.length === 0) return;
+  if (anchorIndex === -1 || moved.length === 0) return Promise.resolve([]);
 
   const index = anchorIndex + (placement.side === "after" ? 1 : 0);
   const previous = rest[index - 1];
@@ -138,13 +142,12 @@ export async function placeNotes(vault: Vault, noteIds: string[], placement: Pla
   const positions = moved.map((_, i) => low + step * (i + 1));
 
   if (positions.every((position, i) => position > (positions[i - 1] ?? low) && position < high)) {
-    await Promise.all(moved.map((note, i) => updateNote(vault, note.id, { position: positions[i] })));
-    return;
+    return Promise.all(moved.map((note, i) => updateNote(vault, note.id, { position: positions[i] })));
   }
 
   // repeated inserts at one spot run out of float precision, so space the whole list out again
   const ordered = [...rest.slice(0, index), ...moved, ...rest.slice(index)];
-  await Promise.all(
+  return Promise.all(
     ordered.map((note, i) => updateNote(vault, note.id, { position: (i + 1) * positionGap })),
   );
 }

@@ -1,8 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { ExportMenu } from "~/components/export-menu";
 import { MoveToTrashButton } from "~/components/move-to-trash-button";
+import { NoteBreadcrumbs } from "~/components/note-breadcrumbs";
 import { NoteEditor } from "~/components/note-editor";
+import { NoteIconPicker } from "~/components/note-icon-picker";
+import { NoteOutline } from "~/components/note-outline";
+import { NoteStatus } from "~/components/note-status";
 import { NoteTitleInput } from "~/components/note-title-input";
 import { PageHeader } from "~/components/page-header";
 import { useDebouncedCallback } from "~/hooks/use-debounced-callback";
@@ -17,14 +21,26 @@ type NoteViewProps = {
 export function NoteView({ note }: NoteViewProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const latestContentRef = useRef(note.content);
+  const [markdown, setMarkdown] = useState(note.content);
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const [hasEdited, setHasEdited] = useState(false);
   const actions = useNoteActions(note.id);
-  const saveContent = useDebouncedCallback(actions.saveContent, 500);
+  const saveContent = useDebouncedCallback((content: string) => {
+    setHasUnsavedEdits(false);
+    actions.saveContent(content);
+  }, 500);
   usePageFileDrop(editorRef);
 
-  function handleContentChange(markdown: string) {
-    latestContentRef.current = markdown;
-    saveContent(markdown);
+  function handleContentChange(content: string) {
+    latestContentRef.current = content;
+    setMarkdown(content);
+    setHasUnsavedEdits(true);
+    setHasEdited(true);
+    saveContent(content);
   }
+
+  const saveState =
+    hasUnsavedEdits || actions.isSaving ? "saving" : hasEdited ? "saved" : "idle";
 
   function focusEditor() {
     editorRef.current?.querySelector<HTMLElement>(".ProseMirror")?.focus();
@@ -33,18 +49,23 @@ export function NoteView({ note }: NoteViewProps) {
   return (
     <>
       <PageHeader
+        leading={<NoteBreadcrumbs title={note.title} />}
         actions={
           <>
+            <NoteStatus markdown={markdown} saveState={saveState} />
             <ExportMenu
               title={note.title}
               getMarkdown={() => latestContentRef.current}
             />
-            <MoveToTrashButton />
+            <MoveToTrashButton noteId={note.id} />
           </>
         }
       />
       <article className="mx-auto max-w-3xl px-12 pt-2">
-        <NoteTitleInput note={note} onContinue={focusEditor} />
+        <div className="group/title">
+          <NoteIconPicker icon={note.icon} onChange={actions.setIcon} />
+          <NoteTitleInput note={note} onContinue={focusEditor} />
+        </div>
         <div className="mt-4">
           <NoteEditor
             ref={editorRef}
@@ -53,6 +74,7 @@ export function NoteView({ note }: NoteViewProps) {
           />
         </div>
       </article>
+      <NoteOutline editorRef={editorRef} />
     </>
   );
 }

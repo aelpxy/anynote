@@ -13,6 +13,7 @@ import jetbrainsMonoFont from "@fontsource-variable/jetbrains-mono/files/jetbrai
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { AppSkeleton } from "~/components/app-skeleton";
 import { useApplyTheme, useTheme } from "~/hooks/use-theme";
 import { getThemeScript } from "~/lib/theme";
 
@@ -59,7 +60,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export function HydrateFallback() {
-  return null;
+  return <AppSkeleton />;
 }
 
 export default function App() {

@@ -1,8 +1,10 @@
 import { useFetcher } from "react-router";
 
+import { toastCollectionMoved } from "~/lib/ui/undo-toasts";
+
 export type CollectionActions = ReturnType<typeof useCollectionActions>;
 
-export function useCollectionActions(collectionId: string) {
+export function useCollectionActions(collectionId: string, parentId: string | null) {
   const fetcher = useFetcher();
 
   function submit(intent: string, fields: Record<string, string> = {}) {
@@ -20,8 +22,10 @@ export function useCollectionActions(collectionId: string) {
   return {
     pendingName,
     rename: (name: string) => submit("rename", { name }),
-    move: (parentId: string | null) =>
-      submit("move", { parentId: parentId ?? "" }),
+    move: (nextParentId: string | null) => {
+      submit("move", { parentId: nextParentId ?? "" });
+      toastCollectionMoved(collectionId, parentId);
+    },
     createSubcollection: () =>
       fetcher.submit(
         { parentId: collectionId },

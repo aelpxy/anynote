@@ -6,7 +6,10 @@ import { useCurrentWorkspaceId } from "~/hooks/use-current-workspace-id";
 import { setAccount } from "~/lib/account/session-store";
 import { ApiError } from "~/lib/api/client";
 import { streamWorkspaceChanges } from "~/lib/api/events";
-import { getVault } from "~/lib/vault/store";
+import { showToast } from "~/lib/ui/toast-store";
+import { subscribeToBackgroundFailures } from "~/lib/vault/background";
+import { subscribeToCollectionWritesSettled } from "~/lib/vault/collection-writes";
+import { getVault, setVault } from "~/lib/vault/store";
 import { syncVault } from "~/lib/vault/sync";
 
 const maxRetryDelayMs = 30_000;
@@ -32,6 +35,22 @@ export function useVaultSync() {
       console.error("Sync failed", error);
     }
   });
+
+  const handleBackgroundFailure = useEffectEvent((error: unknown) => {
+    if (error instanceof ApiError && error.status === 401) {
+      setAccount(null);
+      navigate("/unlock");
+      return;
+    }
+    showToast({ message: "Couldn't save a change, so the latest version was reloaded" });
+    // drop the optimistic cache; the next loader run fetches the workspace again
+    setVault(null);
+    void revalidator.revalidate();
+  });
+
+  useEffect(() => subscribeToBackgroundFailures(handleBackgroundFailure), []);
+
+  useEffect(() => subscribeToCollectionWritesSettled(() => void sync()), []);
 
   useEffect(() => {
     const handleFocus = () => {

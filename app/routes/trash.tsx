@@ -4,6 +4,7 @@ import type { Route } from "./+types/trash";
 import { TrashView } from "~/components/trash-view";
 import { deleteNote, emptyTrash, setNoteTrashed } from "~/lib/vault/note-mutations";
 import { getTrashedNotes } from "~/lib/vault/queries";
+import { runInBackground } from "~/lib/vault/background";
 import { requireVault } from "~/lib/vault/require-vault";
 
 export function meta({}: Route.MetaArgs) {
@@ -21,13 +22,13 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
 
   switch (formData.get("intent")) {
     case "restore":
-      await setNoteTrashed(vault, noteId, false);
+      runInBackground(setNoteTrashed(vault, noteId, false));
       return null;
     case "delete":
-      await deleteNote(vault, noteId);
+      runInBackground(deleteNote(vault, noteId));
       return null;
     case "empty":
-      await emptyTrash(vault);
+      runInBackground(emptyTrash(vault));
       return null;
     default:
       throw data("Invalid intent", { status: 400 });

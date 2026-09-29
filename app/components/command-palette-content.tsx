@@ -1,22 +1,28 @@
 import { Command } from "cmdk";
 import {
+  FilePlus,
   Home,
+  Keyboard,
+  Maximize2,
   Monitor,
   Moon,
+  PanelLeft,
   Plus,
   Search,
   Settings,
   Sun,
+  Trash2,
   User,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher, useNavigate, useSubmit } from "react-router";
 
 import { CommandPaletteItem } from "~/components/command-palette-item";
 import { CommandPaletteNoteItem } from "~/components/command-palette-note-item";
 import { useTheme } from "~/hooks/use-theme";
 import { setOpenDialog } from "~/lib/ui/dialog-store";
+import { toggleFocusMode, toggleSidebar } from "~/lib/ui/layout-store";
 import type { clientLoader as searchLoader } from "~/routes/search";
 
 type PaletteCommand = {
@@ -37,6 +43,7 @@ type CommandPaletteContentProps = {
 
 export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
   const navigate = useNavigate();
+  const submit = useSubmit();
   const { setTheme } = useTheme();
   const { load, data } = useFetcher<typeof searchLoader>();
   const [query, setQuery] = useState("");
@@ -48,6 +55,35 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
 
   const commandGroups: PaletteCommandGroup[] = [
     {
+      heading: "Actions",
+      commands: [
+        {
+          id: "new-note",
+          label: "New note",
+          icon: FilePlus,
+          run: () => submit(null, { method: "post", action: "/notes" }),
+        },
+        {
+          id: "toggle-sidebar",
+          label: "Toggle sidebar",
+          icon: PanelLeft,
+          run: toggleSidebar,
+        },
+        {
+          id: "toggle-focus-mode",
+          label: "Toggle focus mode",
+          icon: Maximize2,
+          run: toggleFocusMode,
+        },
+        {
+          id: "shortcuts",
+          label: "Keyboard shortcuts",
+          icon: Keyboard,
+          run: () => setOpenDialog("shortcuts"),
+        },
+      ],
+    },
+    {
       heading: "Navigation",
       commands: [
         {
@@ -55,6 +91,12 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
           label: "Home",
           icon: Home,
           run: () => navigate("/"),
+        },
+        {
+          id: "trash",
+          label: "Go to Trash",
+          icon: Trash2,
+          run: () => navigate("/trash"),
         },
       ],
     },

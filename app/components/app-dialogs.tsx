@@ -2,6 +2,7 @@ import { useNavigate, useRevalidator } from "react-router";
 
 import { AccountView } from "~/components/account-view";
 import { CreateWorkspaceForm } from "~/components/create-workspace-form";
+import { KeyboardShortcutsView } from "~/components/keyboard-shortcuts-view";
 import { Modal } from "~/components/modal";
 import { SettingsView } from "~/components/settings-view";
 import { useAppDialog } from "~/hooks/use-app-dialog";
@@ -34,6 +35,9 @@ export function AppDialogs() {
             void revalidator.revalidate();
           }}
         />
+      </Modal>
+      <Modal open={openDialog === "shortcuts"} onOpenChange={onOpenChange} title="Keyboard shortcuts">
+        <KeyboardShortcutsView />
       </Modal>
     </>
   );

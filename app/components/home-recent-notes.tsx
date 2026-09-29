@@ -23,7 +23,13 @@ export function HomeRecentNotes({ notes }: HomeRecentNotesProps) {
               to={`/notes/${note.id}`}
               className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-900"
             >
-              <FileText className="size-4 shrink-0 text-neutral-600 dark:text-neutral-400" />
+              {note.icon ? (
+                <span aria-hidden className="flex size-4 shrink-0 items-center justify-center text-sm leading-none">
+                  {note.icon}
+                </span>
+              ) : (
+                <FileText className="size-4 shrink-0 text-neutral-600 dark:text-neutral-400" />
+              )}
               <span className="flex-1 truncate font-medium">{note.title}</span>
               {note.isFavorite && (
                 <Star

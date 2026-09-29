@@ -26,7 +26,9 @@ export function useSidebarDropTargets() {
     claims: (item) => item.kind === "collection",
     canDrop: (item) => item.kind === "collection" && item.parentId !== null,
     onDrop: (item) => {
-      if (item.kind === "collection") actions.moveCollection(item.collectionId, null);
+      if (item.kind === "collection") {
+        actions.moveCollection(item.collectionId, null, item.parentId);
+      }
     },
   });
 

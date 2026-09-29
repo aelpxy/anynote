@@ -12,6 +12,7 @@ function toNote(note: VaultNote): Note {
   return {
     id: note.id,
     title: note.title,
+    icon: note.icon,
     isFavorite: note.isFavorite,
     isTrashed: note.trashedAt !== null,
   };

@@ -1,6 +1,7 @@
 import { data, redirect } from "react-router";
 
 import type { Route } from "./+types/notes-bulk";
+import { runInBackground } from "~/lib/vault/background";
 import {
   placeNotesInCollection,
   removeNoteFromCollection,
@@ -18,14 +19,19 @@ function readNoteIds(formData: FormData) {
   return noteIds as string[];
 }
 
-async function removeFromCollection(vault: Vault, collectionId: string, noteIds: string[]) {
-  for (const noteId of noteIds) await removeNoteFromCollection(vault, collectionId, noteId);
+function removeFromCollection(vault: Vault, collectionId: string, noteIds: string[]) {
+  return noteIds.map((noteId) => removeNoteFromCollection(vault, collectionId, noteId));
 }
 
 function setFavorite(vault: Vault, noteIds: string[], isFavorite: boolean) {
-  return Promise.all(noteIds.map((noteId) => updateNote(vault, noteId, { isFavorite })));
+  return noteIds.map((noteId) => updateNote(vault, noteId, { isFavorite }));
 }
 
+function setTrashed(vault: Vault, noteIds: string[], trashed: boolean) {
+  return noteIds.map((noteId) => setNoteTrashed(vault, noteId, trashed));
+}
+
+// each mutation updates the local vault synchronously, so the ui can revalidate before the server answers
 export async function clientAction({ request }: Route.ClientActionArgs) {
   const vault = await requireVault(request);
   const formData = await request.formData();
@@ -33,32 +39,39 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
   const collectionId = String(formData.get("collectionId") ?? "");
   const fromCollectionId = String(formData.get("fromCollectionId") ?? "");
   const placement = readPlacement(formData);
+  const writes: Promise<unknown>[] = [];
 
   switch (formData.get("intent")) {
     case "favorite":
-      await setFavorite(vault, noteIds, true);
-      return null;
+      writes.push(...setFavorite(vault, noteIds, true));
+      break;
     case "unfavorite":
-      await setFavorite(vault, noteIds, false);
-      return null;
+      writes.push(...setFavorite(vault, noteIds, false));
+      break;
     case "trash":
-      await Promise.all(noteIds.map((noteId) => setNoteTrashed(vault, noteId, true)));
-      return formData.get("redirect") === "home" ? redirect("/") : null;
+      writes.push(...setTrashed(vault, noteIds, true));
+      break;
+    case "restore":
+      writes.push(...setTrashed(vault, noteIds, false));
+      break;
     case "add-to-collection":
-      await placeNotesInCollection(vault, collectionId, noteIds, placement);
+      writes.push(placeNotesInCollection(vault, collectionId, noteIds, placement));
       if (fromCollectionId && fromCollectionId !== collectionId) {
-        await removeFromCollection(vault, fromCollectionId, noteIds);
+        writes.push(...removeFromCollection(vault, fromCollectionId, noteIds));
       }
-      return null;
+      break;
     case "remove-from-collection":
-      await removeFromCollection(vault, collectionId, noteIds);
-      return null;
+      writes.push(...removeFromCollection(vault, collectionId, noteIds));
+      break;
     case "place":
-      if (fromCollectionId) await removeFromCollection(vault, fromCollectionId, noteIds);
-      if (formData.get("favorite") === "true") await setFavorite(vault, noteIds, true);
-      if (placement) await placeNotes(vault, noteIds, placement);
-      return null;
+      if (fromCollectionId) writes.push(...removeFromCollection(vault, fromCollectionId, noteIds));
+      if (formData.get("favorite") === "true") writes.push(...setFavorite(vault, noteIds, true));
+      if (placement) writes.push(placeNotes(vault, noteIds, placement));
+      break;
     default:
       throw data("Invalid intent", { status: 400 });
   }
+
+  runInBackground(Promise.all(writes));
+  return formData.get("redirect") === "home" ? redirect("/") : null;
 }

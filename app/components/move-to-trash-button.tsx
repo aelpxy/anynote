@@ -1,9 +1,15 @@
 import { Trash2 } from "lucide-react";
 import { Form } from "react-router";
 
-export function MoveToTrashButton() {
+import { toastTrashed } from "~/lib/ui/undo-toasts";
+
+type MoveToTrashButtonProps = {
+  noteId: string;
+};
+
+export function MoveToTrashButton({ noteId }: MoveToTrashButtonProps) {
   return (
-    <Form method="post">
+    <Form method="post" onSubmit={() => toastTrashed([noteId])}>
       <input type="hidden" name="redirect" value="home" />
       <button
         type="submit"

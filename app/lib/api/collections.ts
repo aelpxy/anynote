@@ -30,7 +30,7 @@ export function updateCollectionRecord(
   token: string,
   workspaceId: string,
   collectionId: string,
-  body: { encryptedName?: string; parentId?: string | null },
+  body: { encryptedName?: string; parentId?: string | null; position?: number },
 ) {
   return apiRequest<void>(`/workspaces/${workspaceId}/collections/${collectionId}`, {
     method: "PATCH",
