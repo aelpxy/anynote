@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 axum = { version = "0.8.9", features = ["macros"] }
 base64 = "0.23.1"
-brotli = "8"
+brotli = "9"
 chrono = { version = "0.4.45", default-features = false, features = ["serde", "clock", "std"] }
 dotenvy = "0.15.7"
 flate2 = "1.1.10"
