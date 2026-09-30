@@ -5,7 +5,7 @@ pub mod repo;
 use axum::{Router, routing::get};
 
 pub use model::{Entity, Operation};
-pub use repo::record;
+pub use repo::{record, record_many};
 
 use crate::state::AppState;
 

@@ -137,16 +137,15 @@ pub async fn empty_trash(
     authorize(&state.db, workspace_id, auth.user_id, Access::Write).await?;
 
     let mut tx = state.db.begin().await?;
-    for note_id in repo::delete_trashed(&mut *tx, workspace_id).await? {
-        changes::record(
-            &mut tx,
-            workspace_id,
-            Entity::Note,
-            note_id,
-            Operation::Delete,
-        )
-        .await?;
-    }
+    let removed = repo::delete_trashed(&mut *tx, workspace_id).await?;
+    changes::record_many(
+        &mut tx,
+        workspace_id,
+        Entity::Note,
+        &removed,
+        Operation::Delete,
+    )
+    .await?;
     tx.commit().await?;
 
     Ok(StatusCode::NO_CONTENT)

@@ -2,10 +2,15 @@ use std::{io::ErrorKind, path::PathBuf};
 
 use axum::body::Bytes;
 use futures_util::{Stream, StreamExt};
-use tokio::{fs, io::AsyncWriteExt};
+use tokio::{
+    fs,
+    io::{AsyncWriteExt, BufWriter},
+};
 use uuid::Uuid;
 
 use crate::error::AppError;
+
+const WRITE_BUFFER_SIZE: usize = 256 * 1024;
 
 pub struct LocalStorage {
     root: PathBuf,
@@ -41,7 +46,8 @@ impl LocalStorage {
         let temp_path = temp_dir.join(Uuid::new_v4().to_string());
 
         let written = async {
-            let mut file = fs::File::create(&temp_path).await?;
+            let mut file =
+                BufWriter::with_capacity(WRITE_BUFFER_SIZE, fs::File::create(&temp_path).await?);
             let mut size = 0u64;
             while let Some(chunk) = body.next().await {
                 let chunk = chunk.map_err(|error| AppError::bad_request(error.to_string()))?;
@@ -51,7 +57,8 @@ impl LocalStorage {
                 }
                 file.write_all(&chunk).await?;
             }
-            file.sync_all().await?;
+            file.flush().await?;
+            file.get_ref().sync_all().await?;
             Ok(size)
         }
         .await;

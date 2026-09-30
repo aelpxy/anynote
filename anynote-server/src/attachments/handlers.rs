@@ -20,6 +20,8 @@ use crate::{
     workspaces::access::{Access, authorize},
 };
 
+const STREAM_CHUNK_SIZE: usize = 64 * 1024;
+
 pub async fn upload(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -89,7 +91,7 @@ pub async fn download(
             ),
             (header::X_CONTENT_TYPE_OPTIONS, "nosniff".to_string()),
         ],
-        Body::from_stream(ReaderStream::new(file)),
+        Body::from_stream(ReaderStream::with_capacity(file, STREAM_CHUNK_SIZE)),
     )
         .into_response())
 }
@@ -130,16 +132,14 @@ pub async fn sweep(
 
     let mut tx = state.db.begin().await?;
     let removed = repo::delete_unreferenced(&mut *tx, workspace_id, &request.keep).await?;
-    for &attachment_id in &removed {
-        changes::record(
-            &mut tx,
-            workspace_id,
-            Entity::Attachment,
-            attachment_id,
-            Operation::Delete,
-        )
-        .await?;
-    }
+    changes::record_many(
+        &mut tx,
+        workspace_id,
+        Entity::Attachment,
+        &removed,
+        Operation::Delete,
+    )
+    .await?;
     tx.commit().await?;
 
     for &attachment_id in &removed {

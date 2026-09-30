@@ -25,6 +25,30 @@ pub async fn record(
     Ok(())
 }
 
+pub async fn record_many(
+    db: &mut PgConnection,
+    workspace_id: Uuid,
+    entity: Entity,
+    entity_ids: &[Uuid],
+    operation: Operation,
+) -> Result<(), AppError> {
+    if entity_ids.is_empty() {
+        return Ok(());
+    }
+    sqlx::query!(
+        "insert into changes (workspace_id, entity, entity_id, operation)
+         select $1, $2, entity_id, $4 from unnest($3::uuid[]) with ordinality as t(entity_id, n)
+         order by n",
+        workspace_id,
+        entity.as_str(),
+        entity_ids,
+        operation.as_str(),
+    )
+    .execute(db)
+    .await?;
+    Ok(())
+}
+
 pub async fn list_after(
     db: impl PgExecutor<'_>,
     workspace_id: Uuid,

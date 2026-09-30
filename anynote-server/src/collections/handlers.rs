@@ -138,16 +138,14 @@ pub async fn delete(
         return Err(AppError::NotFound);
     }
     repo::delete(&mut *tx, workspace_id, collection_id).await?;
-    for id in removed {
-        changes::record(
-            &mut tx,
-            workspace_id,
-            Entity::Collection,
-            id,
-            Operation::Delete,
-        )
-        .await?;
-    }
+    changes::record_many(
+        &mut tx,
+        workspace_id,
+        Entity::Collection,
+        &removed,
+        Operation::Delete,
+    )
+    .await?;
     tx.commit().await?;
 
     Ok(StatusCode::NO_CONTENT)
@@ -215,16 +213,15 @@ pub async fn reorder(
     validate_order(&request)?;
 
     let mut tx = state.db.begin().await?;
-    for collection_id in repo::reorder(&mut *tx, workspace_id, &request.ids).await? {
-        changes::record(
-            &mut tx,
-            workspace_id,
-            Entity::Collection,
-            collection_id,
-            Operation::Upsert,
-        )
-        .await?;
-    }
+    let reordered = repo::reorder(&mut *tx, workspace_id, &request.ids).await?;
+    changes::record_many(
+        &mut tx,
+        workspace_id,
+        Entity::Collection,
+        &reordered,
+        Operation::Upsert,
+    )
+    .await?;
     tx.commit().await?;
 
     Ok(StatusCode::NO_CONTENT)

@@ -33,9 +33,14 @@ pub async fn touch(
 ) -> Result<Option<SessionRecord>, sqlx::Error> {
     sqlx::query_as!(
         SessionRecord,
-        "update sessions set last_used_at = now()
+        r#"with found as (
+             select id, user_id, created_at, last_used_at from sessions
              where token_hash = $1 and expires_at > now()
-             returning id, user_id, created_at",
+           ), touched as (
+             update sessions s set last_used_at = now()
+             from found where s.id = found.id and found.last_used_at < now() - interval '1 minute'
+           )
+           select id as "id!", user_id as "user_id!", created_at as "created_at!" from found"#,
         token_hash,
     )
     .fetch_optional(db)
