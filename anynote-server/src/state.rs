@@ -8,7 +8,7 @@ use crate::{
     http::rate_limit::{LoginLimiter, PreviewLimiter},
     link_preview::PreviewCache,
     realtime::listener::ChangeSender,
-    storage::LocalStorage,
+    storage::Storage,
 };
 
 #[derive(Clone)]
@@ -16,7 +16,7 @@ pub struct AppState {
     pub db: PgPool,
     pub opaque: Arc<OpaqueServerSetup>,
     pub login_limiter: Arc<LoginLimiter>,
-    pub storage: Arc<LocalStorage>,
+    pub storage: Arc<Storage>,
     pub max_attachment_size: u64,
     pub preview_client: reqwest::Client,
     pub preview_cache: PreviewCache,

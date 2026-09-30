@@ -1,16 +1,18 @@
 use std::{io::ErrorKind, path::PathBuf};
 
-use axum::body::Bytes;
+use axum::body::{Body, Bytes};
 use futures_util::{Stream, StreamExt};
 use tokio::{
     fs,
     io::{AsyncWriteExt, BufWriter},
 };
+use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
 use crate::error::AppError;
 
 const WRITE_BUFFER_SIZE: usize = 256 * 1024;
+const READ_CHUNK_SIZE: usize = 64 * 1024;
 
 pub struct LocalStorage {
     root: PathBuf,
@@ -80,13 +82,18 @@ impl LocalStorage {
         result
     }
 
-    pub async fn open(&self, workspace_id: Uuid, id: Uuid) -> Result<fs::File, AppError> {
-        fs::File::open(self.path(workspace_id, id))
-            .await
-            .map_err(|error| match error.kind() {
-                ErrorKind::NotFound => AppError::NotFound,
-                _ => error.into(),
-            })
+    pub async fn read(&self, workspace_id: Uuid, id: Uuid) -> Result<Body, AppError> {
+        let file =
+            fs::File::open(self.path(workspace_id, id))
+                .await
+                .map_err(|error| match error.kind() {
+                    ErrorKind::NotFound => AppError::NotFound,
+                    _ => error.into(),
+                })?;
+        Ok(Body::from_stream(ReaderStream::with_capacity(
+            file,
+            READ_CHUNK_SIZE,
+        )))
     }
 
     pub async fn delete(&self, workspace_id: Uuid, id: Uuid) -> Result<(), AppError> {

@@ -56,9 +56,23 @@ docker compose up -d --build
 
 The app listens on port `8085` by default. Keep the original `OPAQUE_SERVER_SETUP` value safe. Replacing it will prevent existing users from signing in.
 
+### S3 storage
+
+Images are stored on disk by default. To store them in S3 or any S3-compatible service (Cloudflare R2, MinIO, Backblaze B2) instead, set these in `.env`:
+
+```sh
+S3_BUCKET=anynote
+S3_REGION=auto
+S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+```
+
+Leave out `S3_ENDPOINT` for AWS. Images are encrypted before they reach the server, so the bucket only ever holds ciphertext. Existing images aren't moved when you switch.
+
 ### Backups
 
-Back up the `pgdata` and `attachments` volumes together with your `.env` file. You'll need the original `OPAQUE_SERVER_SETUP` value to let users sign in after a restore.
+Back up the `pgdata` and `attachments` volumes (or your bucket) together with your `.env` file. You'll need the original `OPAQUE_SERVER_SETUP` value to let users sign in after a restore.
 
 ## License
 

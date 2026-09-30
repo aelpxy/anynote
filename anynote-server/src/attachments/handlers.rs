@@ -4,7 +4,6 @@ use axum::{
     http::{StatusCode, header},
     response::{IntoResponse, Response},
 };
-use tokio_util::io::ReaderStream;
 use uuid::Uuid;
 
 use crate::{
@@ -19,8 +18,6 @@ use crate::{
     state::AppState,
     workspaces::access::{Access, authorize},
 };
-
-const STREAM_CHUNK_SIZE: usize = 64 * 1024;
 
 pub async fn upload(
     State(state): State<AppState>,
@@ -78,7 +75,7 @@ pub async fn download(
     let size = repo::size(&state.db, workspace_id, attachment_id)
         .await?
         .ok_or(AppError::NotFound)?;
-    let file = state.storage.open(workspace_id, attachment_id).await?;
+    let body = state.storage.read(workspace_id, attachment_id).await?;
 
     Ok((
         [
@@ -91,7 +88,7 @@ pub async fn download(
             ),
             (header::X_CONTENT_TYPE_OPTIONS, "nosniff".to_string()),
         ],
-        Body::from_stream(ReaderStream::with_capacity(file, STREAM_CHUNK_SIZE)),
+        body,
     )
         .into_response())
 }

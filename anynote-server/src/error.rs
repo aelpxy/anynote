@@ -35,6 +35,15 @@ impl From<std::io::Error> for AppError {
     }
 }
 
+impl From<object_store::Error> for AppError {
+    fn from(error: object_store::Error) -> Self {
+        match error {
+            object_store::Error::NotFound { .. } => Self::NotFound,
+            error => Self::Internal(error.to_string()),
+        }
+    }
+}
+
 impl AppError {
     pub fn bad_request(message: impl Into<String>) -> Self {
         Self::BadRequest(message.into())

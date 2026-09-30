@@ -5,8 +5,13 @@ use tokio::{net::TcpListener, signal};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    app, auth, config::Config, http::rate_limit, jobs, link_preview, realtime, state::AppState,
-    storage::LocalStorage, web,
+    app, auth,
+    config::Config,
+    http::rate_limit,
+    jobs, link_preview, realtime,
+    state::AppState,
+    storage::{LocalStorage, S3Storage, Storage},
+    web,
 };
 
 const MAX_DB_CONNECTIONS: u32 = 10;
@@ -32,12 +37,17 @@ pub async fn run(config: Config) -> Result<(), Box<dyn Error>> {
         ip_config.clone(),
     );
 
+    let storage = match &config.s3 {
+        Some(s3) => Storage::S3(S3Storage::new(s3)?),
+        None => Storage::Local(LocalStorage::new(config.storage_dir)),
+    };
+
     let shutdown = CancellationToken::new();
     let state = AppState {
         db,
         opaque: Arc::new(opaque),
         login_limiter,
-        storage: Arc::new(LocalStorage::new(config.storage_dir)),
+        storage: Arc::new(storage),
         max_attachment_size: config.max_attachment_size,
         preview_client: link_preview::fetch::client(),
         preview_cache: link_preview::cache(),
