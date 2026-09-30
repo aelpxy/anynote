@@ -1,4 +1,5 @@
 import { MotionConfig } from "motion/react";
+import { useEffect } from "react";
 import {
   Links,
   Meta,
@@ -82,6 +83,12 @@ export function HydrateFallback() {
 export default function App() {
   const { theme } = useTheme();
   useApplyTheme(theme);
+
+  useEffect(() => {
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
   return (
     <MotionConfig reducedMotion="user">
