@@ -1,4 +1,5 @@
 import { FileText } from "lucide-react";
+import { useState } from "react";
 
 import type { LinkPreview } from "~/lib/link-preview";
 
@@ -7,12 +8,22 @@ type LinkPreviewContentProps = {
 };
 
 export function LinkPreviewContent({ preview }: LinkPreviewContentProps) {
+  const [brokenIcon, setBrokenIcon] = useState<string>();
+  const icon = preview.icon === brokenIcon ? undefined : preview.icon;
+
   return (
     <>
       <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
         <span className="flex size-5 shrink-0 items-center justify-center rounded bg-neutral-100 text-[10px] font-semibold text-neutral-700 uppercase dark:bg-neutral-700 dark:text-neutral-200">
           {preview.isNote ? (
             <FileText className="size-3" />
+          ) : icon ? (
+            <img
+              src={icon}
+              alt=""
+              className="size-4 object-contain"
+              onError={() => setBrokenIcon(preview.icon)}
+            />
           ) : (
             preview.siteName.charAt(0)
           )}

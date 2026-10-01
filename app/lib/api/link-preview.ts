@@ -5,6 +5,7 @@ export type LinkPreviewRecord = {
   title: string | null;
   description: string | null;
   siteName: string | null;
+  icon: string | null;
 };
 
 export function fetchLinkPreviewRecord(token: string, url: string) {

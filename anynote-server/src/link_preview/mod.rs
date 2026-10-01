@@ -14,7 +14,11 @@ pub type PreviewCache = Cache<String, LinkPreview>;
 
 pub fn cache() -> PreviewCache {
     Cache::builder()
-        .max_capacity(2_000)
+        // weighed in bytes since inlined icons make entries uneven
+        .weigher(|url: &String, preview: &LinkPreview| {
+            (url.len() + preview.icon.as_ref().map_or(0, String::len) + 512) as u32
+        })
+        .max_capacity(32 * 1024 * 1024)
         .time_to_live(Duration::from_secs(60 * 60))
         .build()
 }

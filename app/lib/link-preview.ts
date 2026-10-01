@@ -7,6 +7,7 @@ export type LinkPreview = {
   siteName: string;
   domain: string;
   isNote: boolean;
+  icon?: string;
 };
 
 const notePathPattern = /^\/notes\/([^/?#]+)/;
@@ -44,6 +45,7 @@ export async function fetchLinkPreview(href: string): Promise<LinkPreview> {
       title: preview.title ?? fallback.title,
       description: preview.description ?? "",
       siteName: preview.siteName ?? fallback.siteName,
+      icon: preview.icon ?? undefined,
     };
   } catch {
     return fallbackPreview(url);

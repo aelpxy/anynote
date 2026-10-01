@@ -12,4 +12,5 @@ pub struct LinkPreview {
     pub title: Option<String>,
     pub description: Option<String>,
     pub site_name: Option<String>,
+    pub icon: Option<String>,
 }
