@@ -1,7 +1,9 @@
 use axum::body::{Body, Bytes};
 use futures_util::{Stream, StreamExt, TryStreamExt};
+use std::time::Duration;
+
 use object_store::{
-    ObjectStore, ObjectStoreExt, PutPayload,
+    ClientOptions, ObjectStore, ObjectStoreExt, PutPayload, RetryConfig,
     aws::{AmazonS3, AmazonS3Builder},
     path::Path,
 };
@@ -9,13 +11,25 @@ use uuid::Uuid;
 
 use crate::{config::S3Config, error::AppError};
 
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
+const MAX_RETRIES: usize = 3;
+const RETRY_TIMEOUT: Duration = Duration::from_secs(60);
+
 pub struct S3Storage {
     store: AmazonS3,
 }
 
 impl S3Storage {
     pub fn new(config: &S3Config) -> Result<Self, object_store::Error> {
-        let mut builder = AmazonS3Builder::from_env().with_bucket_name(&config.bucket);
+        let mut builder = AmazonS3Builder::from_env()
+            .with_bucket_name(&config.bucket)
+            // the timeout is split across every address the endpoint resolves to, and some may be unreachable
+            .with_client_options(ClientOptions::new().with_connect_timeout(CONNECT_TIMEOUT))
+            .with_retry(RetryConfig {
+                max_retries: MAX_RETRIES,
+                retry_timeout: RETRY_TIMEOUT,
+                ..Default::default()
+            });
         if let Some(region) = &config.region {
             builder = builder.with_region(region);
         }
