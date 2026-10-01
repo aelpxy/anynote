@@ -33,6 +33,7 @@ import {
   ListChecks,
   ListOrdered,
   Minus,
+  PanelTop,
   Pilcrow,
   Plus,
   Quote,
@@ -48,6 +49,7 @@ import {
 import { MenuItem } from "~/components/menu-item";
 import { MenuSeparator } from "~/components/menu-separator";
 import { MenuSubmenu } from "~/components/menu-submenu";
+import { canShowAsBookmark, showAsBookmark } from "~/lib/bookmark";
 import { copySelection, cutSelection, pasteFromClipboard } from "~/lib/editor-clipboard";
 import { findLinkAt, findParentNode, type LinkRange } from "~/lib/editor-selection";
 
@@ -108,6 +110,11 @@ export function EditorContextMenuItems({
           >
             Remove link
           </MenuItem>
+          {canShowAsBookmark(view, link) && (
+            <MenuItem icon={PanelTop} onClick={() => showAsBookmark(view, link)}>
+              Show as bookmark
+            </MenuItem>
+          )}
           <MenuSeparator />
         </>
       )}

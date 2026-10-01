@@ -436,6 +436,30 @@ img.ProseMirror-separator {
   & th {
     @apply bg-neutral-50 font-medium dark:bg-neutral-900;
   }
+
+  & .note-bookmark {
+    @apply rounded-lg;
+  }
+
+  & .note-bookmark-link {
+    @apply flex cursor-default flex-col gap-1 rounded-lg border border-neutral-200 px-4 py-3 no-underline transition-colors hover:bg-neutral-50 motion-reduce:transition-none dark:border-neutral-800 dark:hover:bg-neutral-900;
+  }
+
+  & .note-bookmark-title {
+    @apply truncate text-[0.9375rem] font-medium text-neutral-900 dark:text-neutral-100;
+  }
+
+  & .note-bookmark-description:not([hidden]) {
+    @apply line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400;
+  }
+
+  & .note-bookmark-site {
+    @apply mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-xs text-neutral-500 dark:text-neutral-400;
+
+    & img:not([hidden]) {
+      @apply size-4 shrink-0 rounded-sm;
+    }
+  }
 }
 
 @media print {

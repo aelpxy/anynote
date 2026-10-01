@@ -5,7 +5,7 @@ const hideDelay = 200;
 
 function getLink(target: EventTarget | null) {
   const link =
-    target instanceof Element ? target.closest<HTMLAnchorElement>("a[href]") : null;
+    target instanceof Element ? target.closest<HTMLAnchorElement>("a[href]:not(.note-bookmark-link)") : null;
   return link?.classList.contains("heading-anchor") ? null : link;
 }
 

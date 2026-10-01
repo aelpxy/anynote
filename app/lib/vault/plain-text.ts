@@ -1,5 +1,6 @@
 export function toPlainText(markdown: string) {
   return markdown
+    .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/^```.*$/gm, " ")
     .replace(/^\|?[\s:|-]*-{3,}[\s:|-]*$/gm, " ")
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")

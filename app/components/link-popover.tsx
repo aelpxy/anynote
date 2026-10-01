@@ -1,10 +1,11 @@
 import { posToDOMRect } from "@milkdown/kit/prose";
 import type { EditorView } from "@milkdown/kit/prose/view";
-import { Copy, ExternalLink, Pencil, Unlink } from "lucide-react";
+import { Copy, ExternalLink, PanelTop, Pencil, Unlink } from "lucide-react";
 
 import { EditorToolbarButton } from "~/components/editor-toolbar-button";
 import { EditorToolbarSeparator } from "~/components/editor-toolbar-separator";
 import { FloatingToolbar } from "~/components/floating-toolbar";
+import { canShowAsBookmark, showAsBookmark } from "~/lib/bookmark";
 import type { LinkRange } from "~/lib/editor-selection";
 
 type LinkPopoverProps = {
@@ -48,6 +49,16 @@ export function LinkPopover({ view, link, onOpen, onEdit }: LinkPopoverProps) {
       />
       <EditorToolbarButton icon={Pencil} label="Edit link" onClick={onEdit} />
       <EditorToolbarButton icon={Unlink} label="Remove link" onClick={removeLink} />
+      {canShowAsBookmark(view, link) && (
+        <>
+          <EditorToolbarSeparator />
+          <EditorToolbarButton
+            icon={PanelTop}
+            label="Show as bookmark"
+            onClick={() => showAsBookmark(view, link)}
+          />
+        </>
+      )}
     </FloatingToolbar>
   );
 }

@@ -30,6 +30,7 @@ import { LinkHoverPreview } from "~/components/link-hover-preview";
 import { NoteLinkSuggest } from "~/components/note-link-suggest";
 import { TableAddControls } from "~/components/table-add-controls";
 import { autolinkPlugin } from "~/lib/autolink-plugin";
+import { bookmarkPromptPlugin, bookmarkRemark, bookmarkSchema, bookmarkView } from "~/lib/bookmark";
 import { codeBlockOptions } from "~/lib/code-block-options";
 import type { LinkRange } from "~/lib/editor-selection";
 import { createViewBridgePlugin } from "~/lib/editor-view-bridge-plugin";
@@ -139,6 +140,8 @@ export function NoteEditorContent({
         .use(tableWithColumnsSchema)
         .use(tableCellWithWidthSchema)
         .use(tableHeaderWithWidthSchema)
+        .use(bookmarkRemark)
+        .use(bookmarkSchema)
         .use(history)
         .use(listener)
         // before clipboard so pasting a URL onto a selection links it instead of replacing it
@@ -151,6 +154,8 @@ export function NoteEditorContent({
         .use(trailing)
         .use(cursor)
         .use(encryptedImageView)
+        .use(bookmarkView)
+        .use(bookmarkPromptPlugin)
         .use(headingAnchorPlugin)
         .use(taskListPlugin)
         .use(findPlugin)

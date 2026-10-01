@@ -10,7 +10,7 @@ const commentPattern = /^<!--\s*anynote:columns\s+([\d,\sauto]+?)\s*-->$/;
 const minColumnWidth = 40;
 const maxColumnWidth = 2000;
 
-type MarkdownNode = {
+export type MarkdownNode = {
   type: string;
   value?: string;
   children?: MarkdownNode[];
@@ -30,13 +30,20 @@ export function formatColumnsComment(widths: (number | null)[]) {
   return `<!-- anynote:columns ${widths.map((width) => (width ? Math.round(width) : "auto")).join(",")} -->`;
 }
 
+export function htmlValueOf(node: MarkdownNode) {
+  if (node.type === "html") return node.value ?? "";
+  const only = node.type === "paragraph" && node.children?.length === 1 ? node.children[0] : null;
+  return only?.type === "html" ? (only.value ?? "") : null;
+}
+
 function applyColumnComments(node: MarkdownNode) {
   const children = node.children;
   if (!children) return;
   for (let index = 0; index < children.length; index += 1) {
     const child = children[index];
     const next = children[index + 1];
-    const widths = child.type === "html" && next?.type === "table" ? parseWidths(child.value ?? "") : null;
+    const html = htmlValueOf(child);
+    const widths = html !== null && next?.type === "table" ? parseWidths(html) : null;
     if (!widths) {
       applyColumnComments(child);
       continue;

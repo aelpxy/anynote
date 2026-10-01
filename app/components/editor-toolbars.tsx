@@ -1,12 +1,15 @@
 import { NodeSelection, TextSelection, type EditorState } from "@milkdown/kit/prose/state";
 import type { EditorView } from "@milkdown/kit/prose/view";
 
+import { BookmarkPrompt } from "~/components/bookmark-prompt";
+import { BookmarkToolbar } from "~/components/bookmark-toolbar";
 import { ImageCaptionForm } from "~/components/image-caption-form";
 import { ImageToolbar } from "~/components/image-toolbar";
 import { LinkForm } from "~/components/link-form";
 import { LinkPopover } from "~/components/link-popover";
 import { SelectionToolbar } from "~/components/selection-toolbar";
 import { TableToolbar } from "~/components/table-toolbar";
+import { bookmarkPromptKey } from "~/lib/bookmark";
 import {
   findLinkAt,
   findParentNode,
@@ -71,6 +74,12 @@ export function EditorToolbars({
     );
   }
 
+  if (selection instanceof NodeSelection && selection.node.type.name === "bookmark") {
+    return (
+      <BookmarkToolbar view={view} pos={selection.from} node={selection.node} onOpen={onOpenLink} />
+    );
+  }
+
   if (hasTextSelection) {
     return (
       <SelectionToolbar
@@ -84,6 +93,11 @@ export function EditorToolbars({
         }
       />
     );
+  }
+
+  const pastedLink = bookmarkPromptKey.getState(state);
+  if (pastedLink) {
+    return <BookmarkPrompt view={view} link={pastedLink} />;
   }
 
   if (link) {
