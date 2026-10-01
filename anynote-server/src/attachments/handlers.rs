@@ -58,7 +58,7 @@ pub async fn upload(
     .await;
 
     if let Err(error) = saved {
-        state.storage.delete(workspace_id, attachment_id).await.ok();
+        state.storage.delete(workspace_id, &[attachment_id]).await;
         return Err(error);
     }
 
@@ -113,7 +113,7 @@ pub async fn delete(
     )
     .await?;
     tx.commit().await?;
-    state.storage.delete(workspace_id, attachment_id).await?;
+    state.storage.delete(workspace_id, &[attachment_id]).await;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -139,9 +139,7 @@ pub async fn sweep(
     .await?;
     tx.commit().await?;
 
-    for &attachment_id in &removed {
-        state.storage.delete(workspace_id, attachment_id).await?;
-    }
+    state.storage.delete(workspace_id, &removed).await;
     Ok(Json(SweepResponse {
         removed: removed.len(),
     }))

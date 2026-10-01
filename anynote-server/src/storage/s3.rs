@@ -49,10 +49,6 @@ impl S3Storage {
         })
     }
 
-    fn workspace_prefix(workspace_id: Uuid) -> Path {
-        Path::from(workspace_id.to_string())
-    }
-
     fn path(workspace_id: Uuid, id: Uuid) -> Path {
         Path::from(format!("{workspace_id}/{id}"))
     }
@@ -96,25 +92,45 @@ impl S3Storage {
         Ok(Body::from_stream(object.into_stream()))
     }
 
-    pub async fn delete(&self, workspace_id: Uuid, id: Uuid) -> Result<(), AppError> {
-        match self.store.delete(&Self::path(workspace_id, id)).await {
-            Err(error) if !matches!(error, object_store::Error::NotFound { .. }) => {
-                Err(error.into())
-            }
-            _ => Ok(()),
-        }
+    pub async fn delete_many(&self, workspace_id: Uuid, ids: &[Uuid]) -> Result<(), AppError> {
+        let paths: Vec<_> = ids
+            .iter()
+            .map(|&id| Ok(Self::path(workspace_id, id)))
+            .collect();
+        let results: Vec<_> = self
+            .store
+            .delete_stream(futures_util::stream::iter(paths).boxed())
+            .collect()
+            .await;
+        first_failure(results)
     }
 
     pub async fn delete_workspace(&self, workspace_id: Uuid) -> Result<(), AppError> {
         let paths = self
             .store
-            .list(Some(&Self::workspace_prefix(workspace_id)))
+            .list(Some(&Path::from(workspace_id.to_string())))
             .map_ok(|meta| meta.location)
             .boxed();
-        self.store
-            .delete_stream(paths)
-            .try_collect::<Vec<_>>()
-            .await?;
-        Ok(())
+        let results: Vec<_> = self.store.delete_stream(paths).collect().await;
+        first_failure(results)
+    }
+
+    // a missing object is fine, anything else means the bucket or credentials are wrong
+    pub async fn check(&self) -> Result<(), AppError> {
+        match self.store.head(&Path::from(".anynote-check")).await {
+            Ok(_) | Err(object_store::Error::NotFound { .. }) => Ok(()),
+            Err(error) => Err(error.into()),
+        }
+    }
+}
+
+fn first_failure(results: Vec<Result<Path, object_store::Error>>) -> Result<(), AppError> {
+    match results
+        .into_iter()
+        .filter_map(Result::err)
+        .find(|error| !matches!(error, object_store::Error::NotFound { .. }))
+    {
+        Some(error) => Err(error.into()),
+        None => Ok(()),
     }
 }

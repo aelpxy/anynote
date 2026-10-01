@@ -96,11 +96,17 @@ impl LocalStorage {
         )))
     }
 
-    pub async fn delete(&self, workspace_id: Uuid, id: Uuid) -> Result<(), AppError> {
-        match fs::remove_file(self.path(workspace_id, id)).await {
-            Err(error) if error.kind() != ErrorKind::NotFound => Err(error.into()),
-            _ => Ok(()),
+    pub async fn delete_many(&self, workspace_id: Uuid, ids: &[Uuid]) -> Result<(), AppError> {
+        let mut failure = None;
+        for &id in ids {
+            match fs::remove_file(self.path(workspace_id, id)).await {
+                Err(error) if error.kind() != ErrorKind::NotFound => {
+                    failure.get_or_insert(error);
+                }
+                _ => {}
+            }
         }
+        failure.map_or(Ok(()), |error| Err(error.into()))
     }
 
     pub async fn delete_workspace(&self, workspace_id: Uuid) -> Result<(), AppError> {

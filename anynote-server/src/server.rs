@@ -42,12 +42,18 @@ pub async fn run(config: Config) -> Result<(), Box<dyn Error>> {
         None => Storage::Local(LocalStorage::new(config.storage_dir)),
     };
 
+    let storage = Arc::new(storage);
+    tokio::spawn({
+        let storage = storage.clone();
+        async move { storage.check().await }
+    });
+
     let shutdown = CancellationToken::new();
     let state = AppState {
         db,
         opaque: Arc::new(opaque),
         login_limiter,
-        storage: Arc::new(storage),
+        storage,
         max_attachment_size: config.max_attachment_size,
         preview_client: link_preview::fetch::client(),
         preview_cache: link_preview::cache(),

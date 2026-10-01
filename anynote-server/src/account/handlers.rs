@@ -26,7 +26,7 @@ pub async fn delete_account(
     tx.commit().await?;
 
     for workspace_id in owned_workspaces {
-        state.storage.delete_workspace(workspace_id).await?;
+        state.storage.delete_workspace(workspace_id).await;
     }
     Ok(StatusCode::NO_CONTENT)
 }

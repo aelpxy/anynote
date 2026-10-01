@@ -83,7 +83,7 @@ pub async fn delete(
     }
 
     repo::delete(&state.db, workspace_id).await?;
-    state.storage.delete_workspace(workspace_id).await?;
+    state.storage.delete_workspace(workspace_id).await;
 
     Ok(StatusCode::NO_CONTENT)
 }

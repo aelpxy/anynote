@@ -40,17 +40,38 @@ impl Storage {
         }
     }
 
-    pub async fn delete(&self, workspace_id: Uuid, id: Uuid) -> Result<(), AppError> {
-        match self {
-            Self::Local(storage) => storage.delete(workspace_id, id).await,
-            Self::S3(storage) => storage.delete(workspace_id, id).await,
+    // files are removed after the database commit, so a failure is logged instead of failing the request
+    pub async fn delete(&self, workspace_id: Uuid, ids: &[Uuid]) {
+        if ids.is_empty() {
+            return;
+        }
+        let result = match self {
+            Self::Local(storage) => storage.delete_many(workspace_id, ids).await,
+            Self::S3(storage) => storage.delete_many(workspace_id, ids).await,
+        };
+        if let Err(error) = result {
+            tracing::warn!(%error, %workspace_id, count = ids.len(), "couldn't delete attachment files");
         }
     }
 
-    pub async fn delete_workspace(&self, workspace_id: Uuid) -> Result<(), AppError> {
-        match self {
+    pub async fn delete_workspace(&self, workspace_id: Uuid) {
+        let result = match self {
             Self::Local(storage) => storage.delete_workspace(workspace_id).await,
             Self::S3(storage) => storage.delete_workspace(workspace_id).await,
+        };
+        if let Err(error) = result {
+            tracing::warn!(%error, %workspace_id, "couldn't delete workspace files");
+        }
+    }
+
+    pub async fn check(&self) {
+        if let Self::S3(storage) = self {
+            match storage.check().await {
+                Ok(()) => tracing::info!("s3 bucket is reachable"),
+                Err(error) => {
+                    tracing::error!(%error, "s3 bucket check failed, uploads and downloads will fail")
+                }
+            }
         }
     }
 }
